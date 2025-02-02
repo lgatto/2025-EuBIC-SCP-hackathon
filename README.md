@@ -63,7 +63,7 @@ datasets will be used/extended:
 
 
 - A recent version of R (>= 4.4) or one of the Bioconductor
-  [https://www.bioconductor.org/help/docker/](docker images).
+  [docker images[(https://www.bioconductor.org/help/docker/).
 -  A set of R/Bioconductor packages that can be installed with:
 
 ```r
