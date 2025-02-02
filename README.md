@@ -76,5 +76,5 @@ BiocManager::install(c("QFeatures", "scp", "scpdata"))
 - Live, face-to-face at the hackathon
 - Slack #single-cell-hackathon
 - Github issues
-  [here](https://github.com/lgatto/2025-EuBIC-SCP-hackathon) or in the
-  respective package repos.
+  [here](https://github.com/lgatto/2025-EuBIC-SCP-hackathon/issues) or
+  in the respective package repos.
