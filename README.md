@@ -31,8 +31,10 @@ would like to:
 
 1. Identify the next set of requirements and priorities for computational SCP.
 2. Improve documentation and tutorials.
-3. Provide users with [interactive apps and visualisation](https://uclouvain-cbio.github.io/QFeaturesGUI/articles/scpGUI.html).
-4. Add new data to the [curated SCP data collection](https://uclouvain-cbio.github.io/scpdata/).
+3. Provide users with [interactive apps and
+   visualisation](https://uclouvain-cbio.github.io/QFeaturesGUI/articles/scpGUI.html).
+4. Add new data to the [curated SCP data
+   collection](https://uclouvain-cbio.github.io/scpdata/).
 5. Prototype or develop new SCP analysis modules.
 
 After the hackaton we plan to
@@ -47,7 +49,6 @@ between computational and experimental SCP practitioners. All
 contributions will be formally acknowledged as package contributors
 (whether code or documentation) and/or authorship, depending on our
 productions.
-
 
 ### Technical Details
 
@@ -69,3 +70,11 @@ datasets will be used/extended:
 install.packages("BiocManager")
 BiocManager::install(c("QFeatures", "scp", "scpdata"))
 ```
+
+### Discussions
+
+- Live, face-to-face at the hackathon
+- Slack #single-cell-hackathon
+- Github issues
+  [here](https://github.com/lgatto/2025-EuBIC-SCP-hackathon) or in the
+  respective package repos.
