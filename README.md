@@ -20,7 +20,7 @@ interpretable [statistical
 modelling](https://uclouvain-cbio.github.io/scp/articles/scp_data_modelling.html). In
 this hackathon, we propose to benefit from the broadest community
 input to extend the `scp` ecosystem to make it more accessible to a
-gorwing SCP user base.
+growing SCP user base.
 
 
 ### Project Plan
@@ -31,8 +31,7 @@ would like to:
 
 1. Identify the next set of requirements and priorities for computational SCP.
 2. Improve documentation and tutorials.
-3. Provide users with [interactive apps and
-   visualisation](https://uclouvain-cbio.github.io/QFeaturesGUI/articles/scpGUI.html).
+3. Provide users with interactive apps and visualisation.
 4. Add new data to the [curated SCP data
    collection](https://uclouvain-cbio.github.io/scpdata/).
 5. Prototype or develop new SCP analysis modules.
@@ -63,7 +62,7 @@ datasets will be used/extended:
 
 
 - A recent version of R (>= 4.4) or one of the Bioconductor
-  [docker images[(https://www.bioconductor.org/help/docker/).
+  [docker images](https://www.bioconductor.org/help/docker/).
 -  A set of R/Bioconductor packages that can be installed with:
 
 ```r
