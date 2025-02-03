@@ -1,4 +1,4 @@
-#+TITLE: SCP Hackathon pitch
+#+TITLE: SCP Hackathon Pitch
 #+DATE:  [2025-02-03 Mon]
 
 *Improving MS-based single-cell proteomics data, software and
@@ -20,12 +20,12 @@ missing values, correct batch effects, aggregate features, perform
 quality control and, most importantly, offers flexible and efficient
 support for robust and interpretable [[https://uclouvain-cbio.github.io/scp/articles/scp_data_modelling.html][statistical modelling]].
 
+*Plan*: Introduction - Existing packages - Possible projects - Expected
+skills - Installation instructions - Credit.
+
 In this hackathon, we propose to benefit from the broadest community
 input to extend the =scp= ecosystem to make it more accessible to a
 growing SCP user base.
-
-*Plan*: Introduction - Existing packages - Possible projects - Expected
-skills - Installation instructions - Credit.
 
 * Single cell proteomics
 
@@ -149,3 +149,4 @@ BiocManager::install(c("QFeatures", "scp", "scpdata"))
 * Let's hack!
 
 Room: Mariensaal, 1st floor.
+Slack: #single-cell-hackathon
