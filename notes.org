@@ -1,0 +1,47 @@
+* Notes [2025-02-03 Mon]
+
+- Learn about SCP in general, SCP data analysis
+- Understand SCP data structures
+- Documentation
+- scRNA-Seq vs SCP
+- Shiny apps
+- Quantitative data analysis
+- SPC data modelling, identification uncertainty
+- Cell types classifier/annotation
+- Downstream analyses: trajectory analysis
+- New visualisations
+- Write paper! Or vignette.
+
+** TODO  [1/6]
+
+1. [X] Find a paper/dataset
+2. [ ] Get data and metadata
+3. [ ] Create a QFeatures object
+4. [ ] Process data
+5. [ ] Model SCP data with scplainer
+6. [ ] Apply trajectory analysis
+
+** Where to find data
+
+*** =scpdata=
+=scpdata::scpdata()= returns a table of crurated datasets in the
+=scpdata= package.
+
+*** From papers
+- What is the biological question? Does it match our usecase
+  (modelling and trajectory analysis)?
+- How many cells (check their PCA/t-SNE plot). Aim for > 1000 cells
+  (depending on the biological question).
+- What technology? Is is really MS-based (not ABseq, CITE-Seq).
+- Do they share the data? Where?
+- Do they document their data/files (metadata)?
+- Do they share quantitative data (ideally at the PSM or peptide
+  level)?
+
+Current candidates:
+
+- [[https://www.sciencedirect.com/science/article/pii/S1535947625000088#sec6][Single Cell Proteomics Reveals Specific Cellular Subtypes in
+  Cardiomyocytes Derived from Human iPSCs and Adult Hearts]]
+- Deep single-cell proteomics quantifies low-abundant embryonic
+  transcription factors and lineage markers during induced pluripotent
+  stem cell differentiation [[https://www.ebi.ac.uk/pride/archive/projects/PXD054066][PXD054066]]
