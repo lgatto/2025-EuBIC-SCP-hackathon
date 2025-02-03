@@ -1,0 +1,145 @@
+#+TITLE: SCP Hackathon pitch
+#+DATE:  [2025-02-03 Mon]
+
+*Improving MS-based single-cell proteomics data, software and
+documentation*
+
+Laurent Gatto
+UCLouvain, BE
+
+* Improving SCP data, software and documentation
+
+Mass spectrometry-based single-cell proteomics (SCP) has become a
+credible player in the single-cell biology arena. Continuous technical
+improvements have pushed the boundaries of sensitivity and
+throughput. However, the computational efforts to support the analysis
+of these complex data have been lagging. The [[https://rformassspectrometry.github.io/QFeatures][QFeatures]] and [[https://uclouvain-cbio.github.io/scp/][scp]]
+R/Bioconductor packages are a flexible tools to handle such data. It
+allows to process the quantitative data, filtering and/or imputing
+missing values, correct batch effects, aggregate features, perform
+quality control and, most importantly, offers flexible and efficient
+support for robust and interpretable [[https://uclouvain-cbio.github.io/scp/articles/scp_data_modelling.html][statistical modelling]].
+
+In this hackathon, we propose to benefit from the broadest community
+input to extend the =scp= ecosystem to make it more accessible to a
+growing SCP user base.
+
+*Plan*: Introduction - Existing packages - Possible projects - Expected
+skills - Installation instructions - Credit.
+
+* Single cell proteomics
+
+- Mass spectrometry-based single cell proteomics (SCP)
+- Many flavours: label-free or labelled, DIA or DDA
+- Focus on the computational aspects of SCP, /conceptually/ applicable
+  to all/most these flavours.
+- Data available
+
+* Existing packages
+
+- =QFeatures=
+- =scp=
+- =scpdata=
+
+** =QFeatures=
+
+The =QFeatures= infrastructure enables the management and processing
+of quantitative features for high-throughput mass spectrometry assays.
+It provides a familiar Bioconductor user experience to manages
+quantitative data across different assay levels (such as spectra,
+peptides and proteins) in a coherent and tractable format.
+
+- https://bioconductor.org/packages/QFeatures
+- https://rformassspectrometry.github.io/QFeatures
+
+[[file:./figs/qfeatures.png]]
+
+** =scp=
+
+Utility functions for manipulating, processing, and analyzing mass
+spectrometry-based single-cell proteomics data. The package is an
+extension to the =QFeatures= package and relies on
+=SingleCellExpirement= to enable single-cell proteomics analyses.
+
+- https://bioconductor.org/packages/scp
+- https://uclouvain-cbio.github.io/scp
+
+Figure: [[https://uclouvain-cbio.github.io/scp/articles/figures%2FScpModel-class.png][scplainer pipeline]]
+
+** =scpdata=
+
+Curated SCP data collection, as =QFeatures= objects.
+
+- https://bioconductor.org/packages/scpdata
+
+#+begin_src R
+> scpdata::specht2019v3()
+see ?scpdata and browseVignettes('scpdata') for documentation
+loading from cache
+An instance of class QFeatures containing 179 assays:
+ [1] 190222S_LCA9_X_FP94AA: SingleCellExperiment with 2777 rows and 11 columns
+ [2] 190222S_LCA9_X_FP94AB: SingleCellExperiment with 4348 rows and 11 columns
+ [3] 190222S_LCA9_X_FP94AC: SingleCellExperiment with 4917 rows and 11 columns
+ ...
+ [177] 191110S_LCB7_X_APNOV16plex2_Set_9: SingleCellExperiment with 4934 rows and 16 columns
+ [178] peptides: SingleCellExperiment with 9354 rows and 1490 columns
+ [179] proteins: SingleCellExperiment with 3042 rows and 1490 columns
+#+end_src
+
+* Projects
+
+Identify and *discuss* the next set of requirements and priorities for
+computational SCP. *Share* and learn from experiences on:
+- quality control, (raw), identification, quantitative, integration,
+  visualisation, documentation, ...
+
+- Prototype or develop *new SCP analysis* modules/pipelines.
+- Improve existing *documentation* and *tutorials*, or contribute new
+  ones. Educational videos.
+- Workflow clarification/improvement.
+- Code optimisation.
+- Contribute *new data* to the =scpdata= package.
+- Provide users with *interactive apps* and new/better visualisation.
+- Intergrate/implement existing methods in other languages.
+- Design/develop a *webpage* to disseminate/advertise/explore the data
+  in =scpdata=.
+- ...
+
+* Skills
+
+Any of these:
+- R programming
+- Any other programming language
+- Data analysis
+- Visualisation
+- Debugging
+- Markdown and Rmd (for documentation)
+- Writing/explaining (for documentation)
+- Web design/JS
+- ...
+
+Tools:
+- RStudio (or your favourite editor)
+- Github, git
+- ...
+
+* Installation instructions
+
+- R (>= 4.4) or one of the Bioconductor [[https://www.bioconductor.org/help/docker/][docker images]].
+- Bioconductor packages that can be installed with:
+
+#+begin_src R
+install.packages("BiocManager")
+BiocManager::install(c("QFeatures", "scp", "scpdata"))
+#+end_src
+
+- Fork or clone the repo: https://github.com/lgatto/2025-EuBIC-SCP-hackathon
+
+* Credit for contributions
+
+- Package contributor.
+- Vignette/documentation page (co-)authorship.
+- Authors on a paper defining new priorities for computational SCP.
+- ...
+
+* Let's hack!
