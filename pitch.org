@@ -29,11 +29,11 @@ skills - Installation instructions - Credit.
 
 * Single cell proteomics
 
-- Mass spectrometry-based single cell proteomics (SCP)
-- Many flavours: label-free or labelled, DIA or DDA
+- Mass spectrometry-based single cell proteomics (SCP).
+- Many flavours: label-free or labelled, DIA or DDA.
 - Focus on the computational aspects of SCP, /conceptually/ applicable
   to all/most these flavours.
-- Data available
+- Formatted and curated data readily available.
 
 * Existing packages
 
@@ -89,9 +89,13 @@ An instance of class QFeatures containing 179 assays:
 * Projects
 
 Identify and *discuss* the next set of requirements and priorities for
-computational SCP. *Share* and learn from experiences on:
-- quality control, (raw), identification, quantitative, integration,
-  visualisation, documentation, ...
+computational SCP. *Share* and *learn* from experiences on:
+- quality control, (raw), identification, quantitative
+- integration across platforms, programming languages, [[https://bioconductor.org/packages/release/data/experiment/html/SingleCellMultiModal.html][omics modalities]]
+- visualisation, documentation
+- ...
+
+Any number, looong/shrt:
 
 - Prototype or develop *new SCP analysis* modules/pipelines.
 - Improve existing *documentation* and *tutorials*, or contribute new
@@ -143,3 +147,5 @@ BiocManager::install(c("QFeatures", "scp", "scpdata"))
 - ...
 
 * Let's hack!
+
+Room: Mariensaal, 1st floor.
