@@ -22,6 +22,12 @@
 6. [ ] Model SCP data with scplainer.
 7. [ ] Apply trajectory analysis.
 
+** Misc todos
+
+- Identify important columns in the DIA-NN report file and those that
+  we could drop to improve loading time.
+- What precursor filtering do we want/need? What columns are needed?
+
 ** Where to find data
 
 *** =scpdata=
