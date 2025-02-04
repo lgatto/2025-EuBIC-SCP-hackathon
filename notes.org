@@ -24,9 +24,10 @@
 
 ** Misc todos
 
-- Identify important columns in the DIA-NN report file and those that
+- [ ] Identify important columns in the DIA-NN report file and those that
   we could drop to improve loading time.
-- What precursor filtering do we want/need? What columns are needed?
+- [ ] What precursor filtering do we want/need? What columns are
+  needed?
 
 ** Where to find data
 
@@ -170,3 +171,10 @@ modelling from the filenames.
     mutate(file = sub("X.+CM_PROJECT\\\\", "", file))
   tab$date <- ymd(as.integer(substring(tab$file, 1, 6)))
 #+end_src
+
+What metadata is available in the filenames:
+- Acquisition data (221019, ...)
+- Subject number (Subject3, ...)
+- Heart location (Lvendo, ...)
+- Position in plate (A17, ...)
+- ??? (BA18, ...)
