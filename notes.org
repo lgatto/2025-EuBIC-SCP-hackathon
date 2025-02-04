@@ -173,8 +173,14 @@ modelling from the filenames.
 #+end_src
 
 What metadata is available in the filenames:
-- Acquisition data (221019, ...)
-- Subject number (Subject3, ...)
+- File names, can be trimmed with =sub("^.+CM_PROJECT\\\\", "", .)=.
+- Acquisition data (221019, ...), can be converted to a =Date= type
+  with =lubridate::ymd=.
+- Subject number (Subject3, ...), preferably not as a number.
 - Heart location (Lvendo, ...)
 - Position in plate (A17, ...)
 - ??? (BA18, ...)
+
+We need to create a =data.frame= (actually a =DataFrame=, that we'll
+describe later) with 299 lines (one per cell) and the information
+above.
