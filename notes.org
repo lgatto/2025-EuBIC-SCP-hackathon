@@ -163,8 +163,7 @@ First quick check:
   acms
 #+end_src
 
-
-* Preparing the scp data [2025-02-04 Tue]
+* SCP data analysis [2025-02-04 Tue]
 
 ** Meta-data
 
@@ -368,4 +367,61 @@ acms <- logTransform(acms, "precursors", "precursors_log")
 
 #+begin_src R
 saveRDS(acms, file = "acms.rds")
+#+end_src
+
+** Statistical analysis
+
+Remove sytox cells (all subject 5)
+
+#+begin_src R
+  sce <- getWithColData(acms, "precursors_log")
+  sce <- sce[, sce$HeartLocation != "sytox"]
+#+end_src
+
+*** Modelling
+
+#+begin_src R
+  sce <- scpModelWorkflow(
+      sce,
+      formula = ~ 1 + ## intercept
+          ## normalisation
+          MedianIntensity +
+          ## batch effects
+          Subject +
+          ## biological variability
+          HeartLocation
+  )
+#+end_src
+
+*** Analysis of variance
+
+#+begin_src R
+(vaRes <- scpVarianceAnalysis(sce))
+vaRes <- scpAnnotateResults(
+    vaRes, rowData(sce), by = "feature", by2 = "Stripped.Sequence"
+)
+scpVariancePlot(vaRes)
+scpVariancePlot(
+    vaRes, top = 20, by = "percentExplainedVar", effect = "Celltype",
+    decreasing = TRUE, combined = FALSE
+) +
+    scpVariancePlot(
+        vaRes, top = 20, by = "percentExplainedVar", effect = "Set",
+        decreasing = TRUE, combined = FALSE
+    ) +
+    plot_layout(ncol = 1, guides = "collect")
+#+end_src
+
+*** Differential abundance analysis
+
+#+begin_src R
+locations <- unique(ai2025$)
+(daRes <- scpDifferentialAnalysis(
+    sce, contrast = list(
+        c("Celltype", "Melanoma", "PDAC"),
+        c("Celltype", "Melanoma", "U-937"),
+        c("Celltype", "PDAC", "U-937")
+    )
+))
+daRes[[1]]
 #+end_src
