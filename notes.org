@@ -308,5 +308,64 @@ removed.
   )
 
   colData(acms) |>
-    data.frame()
+    data.frame() |>
+    ggplot(aes(x = log10(MedianIntensity),
+               y = TotalIds,
+               colour = MedianCV)) +
+    geom_point(size = 4)
+
+  colData(acms) |>
+    data.frame() |>
+    ggplot(aes(x = log10(MedianIntensity),
+               y = TotalIds,
+               colour = Subject)) +
+    geom_point(size = 4) +
+    colData(acms) |>
+    data.frame() |>
+    ggplot(aes(x = log10(MedianIntensity),
+               y = TotalIds,
+               colour = HeartLocation)) +
+    geom_point(size = 4)
+
+
+    colData(acms) |>
+    data.frame() |>
+    ggplot(aes(x = log10(MedianIntensity),
+               y = TotalIds,
+               colour = Date)) +
+    geom_point(size = 4)
+
+  table(colData(acms)[, c("Subject", "Date")])
+#+end_src
+
+
+** Log transformation
+
+#+begin_src R
+acms <- logTransform(acms, "precursors", "precursors_log")
+#+end_src
+
+** Aggregation
+
+#+begin_src emacs-lisp
+  acms <- aggregateFeatures(acms,
+                            i = "precursors_log",
+                            name = "peptides",
+                            fcol = "Modified.Sequence",
+                            fun = colMedians,
+                            na.rm = TRUE)
+
+  acms <- aggregateFeatures(acms,
+                            i = "peptides",
+                            name = "proteins",
+                            fcol = "Protein.Ids",
+                            fun = colMedians,
+                            na.rm = TRUE)
+
+#+end_src
+
+** Serialise QFeatures
+
+#+begin_src R
+saveRDS(acms, file = "acms.rds")
 #+end_src
