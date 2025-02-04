@@ -29,6 +29,11 @@
 - [ ] What precursor filtering do we want/need? What columns are
   needed?
 
+** FIXME
+
+- In nPOP replication vignette, =countUniqueFeatures()= link is
+  broken.
+
 ** Where to find data
 
 *** =scpdata=
@@ -277,9 +282,31 @@ SCP.replication]] and [[https://uclouvain-cbio.github.io/SCP.replication/][SCP R
 
 ***  Sample QC
 
+Use the =precursors= assay, created above.
+
 - Compute the median intensity for each cell
 - Compute the number of identifications (non NA values) in each cell
 - Compute the median CV per cell (see =medianCVperCell()=)
 
 Visualise each of these to identify low quality cells that could be
 removed.
+
+#+begin_src R
+  acms$MedianIntensity <- colMedians(
+      assay(acms[["precursors"]]), na.rm = TRUE
+  )
+
+  acms$TotalIds <- colSums(!is.na(assay(acms[["precursors"]])))
+
+  acms <- medianCVperCell(
+    acms,
+    i = 300,
+    groupBy = "Protein.Names",
+    nobs = 3,
+    na.rm = TRUE,
+    colDataName = "MedianCV"
+  )
+
+  colData(acms) |>
+    data.frame()
+#+end_src
