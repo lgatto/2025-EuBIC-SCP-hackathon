@@ -1,3 +1,8 @@
+#+TITLE: Improving MS-based SCP data, software and documentation
+
+*Contributors*: Uladzislau, Chris, Laurent, San, Sven, Louise, Hannah,
+Enrico.
+
 * Setting the stage [2025-02-03 Mon]
 
 - Learn about SCP in general, SCP data analysis
@@ -12,15 +17,17 @@
 - New visualisations
 - Write paper! Or vignette.
 
-** Hackathon plan  [2/7]
+** Hackathon plan  [5/9]
 
 1. [X] Find a paper/dataset.
 2. [X] Get the data.
-3. [ ] Get the metadata.
-4. [ ] Create a QFeatures object.
-5. [ ] Process data.
+3. [X] Get the metadata.
+4. [X] Create a QFeatures object.
+5. [X] Process data.
 6. [ ] Model SCP data with scplainer.
 7. [ ] Apply trajectory analysis.
+8. [ ] Write a vignette.
+9. [ ] Add the new data to =scpdata=.
 
 ** Misc todos
 
@@ -28,11 +35,6 @@
   we could drop to improve loading time.
 - [ ] What precursor filtering do we want/need? What columns are
   needed?
-
-** FIXME
-
-- In nPOP replication vignette, =countUniqueFeatures()= link is
-  broken.
 
 ** Where to find data
 
@@ -65,8 +67,9 @@
 
 * Working paper/data
 
-Ai et al. (2025) [[https://www.sciencedirect.com/science/article/pii/S1535947625000088#sec6][Single Cell Proteomics Reveals Specific Cellular
+Ai /et al./ (2025) [[https://www.sciencedirect.com/science/article/pii/S1535947625000088#sec6][Single Cell Proteomics Reveals Specific Cellular
 Subtypes in Cardiomyocytes Derived from Human iPSCs and Adult Hearts]]
+(data at [[https://massive.ucsd.edu/ProteoSAFe/dataset_files.jsp?task=e576331ad1904dbbbcc7fe8456904854#%7B%22table_sort_history%22%3A%22main.collection_asc%22%7D][MassIVE MSV000094438]]).
 
 From the methods section:
 
@@ -188,7 +191,7 @@ What metadata is available in the filenames:
 - Position in plate (A17, ...)
 - Position (BA18, ...)
 
-Details about the annotations [[https://massive.ucsd.edu/ProteoSAFe/dataset_files.jsp?task=e576331ad1904dbbbcc7fe8456904854#%7B%22table_sort_history%22%3A%22main.collection_asc%22%7D][MassIVE MSV000094438]] xml file.
+Details about the annotations in and ://massive.ucsd.edu/ProteoSAFe/dataset_files.jsp?task=e576331ad1904dbbbcc7fe8456904854#%7B%22table_sort_history%22%3A%22main.collection_asc%22%7 xml file on MassIVE.
 
 We need to create a =data.frame= (actually a =DataFrame=, that we'll
 describe later) with 299 lines (one per cell) and the information
@@ -337,7 +340,6 @@ removed.
   table(colData(acms)[, c("Subject", "Date")])
 #+end_src
 
-
 ** Log transformation
 
 #+begin_src R
@@ -371,8 +373,7 @@ saveRDS(acms, file = "acms.rds")
 
 ** Statistical analysis
 
-Reference: [[https://www.biorxiv.org/content/10.1101/2023.12.14.571792v2][scplainer: using linear models to understand mass
-spectrometry-based single-cell proteomics data]]
+Reference: [[https://www.biorxiv.org/content/10.1101/2023.12.14.571792v2][scplainer: using linear models to understand mass spectrometry-based single-cell proteomics data]]
 
 Remove sytox cells (all subject 5)
 
