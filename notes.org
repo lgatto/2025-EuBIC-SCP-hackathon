@@ -371,6 +371,9 @@ saveRDS(acms, file = "acms.rds")
 
 ** Statistical analysis
 
+Reference: [[https://www.biorxiv.org/content/10.1101/2023.12.14.571792v2][scplainer: using linear models to understand mass
+spectrometry-based single-cell proteomics data]]
+
 Remove sytox cells (all subject 5)
 
 #+begin_src R
