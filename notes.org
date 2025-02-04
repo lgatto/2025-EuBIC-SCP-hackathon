@@ -245,7 +245,41 @@ acms <- zeroIsNA(acms, names(acms))
 acms <- filterFeatures(acms, ~ !grepl(";", Protein.Names))
 #+end_src
 
-More about (long) processing:
+More about (long) processing (we want to do minimal processing):
 
 - [[https://www.biorxiv.org/content/10.1101/2021.04.12.439408v2.full][Replication of single-cell proteomics data reveals important
   computational challenges]]
+
+Let's use the =Precursor.Id= in the =rowData()= to set the rownames.
+
+#+begin_src R
+  ## Iterate of a list of assays and replace their rownames.
+  expl <- lapply(experiments(acms),
+         function(x) {
+           rownames(x) <- rowData(x)$Precursor.Id
+           x
+         })
+
+  ## Replace the orginal assays with the row-renamed ones.
+  experiments(acms) <- List(expl)
+#+end_src
+
+Let's join the 299 assays
+
+#+begin_src R
+acms <- joinAssay(acms, i = names(acms), name = "precursors")
+#+end_src
+
+** QC
+
+See [[https://uclouvain-cbio.github.io/SCP.replication/articles/scplainer_leduc2022.html#sample-quality-control][scplainer: reanalysis of the nPOP dataset (Leduc et al. 2022) •
+SCP.replication]] and [[https://uclouvain-cbio.github.io/SCP.replication/][SCP Replication Vignettes • SCP.replication]].
+
+***  Sample QC
+
+- Compute the median intensity for each cell
+- Compute the number of identifications (non NA values) in each cell
+- Compute the median CV per cell (see =medianCVperCell()=)
+
+Visualise each of these to identify low quality cells that could be
+removed.
