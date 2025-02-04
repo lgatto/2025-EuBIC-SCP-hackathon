@@ -209,8 +209,6 @@ above.
     tab$HeartLocation[grep(loc, tab$File.Name, ignore.case = TRUE)] <- loc
   }
 
-  ## tab$HeartLocation[grep("syntox", tab$File.Name, ignore.case = TRUE)] <- "sytox"
-
   tab
 
   table(tab$Subject)
@@ -228,5 +226,26 @@ above.
   tab$runCol <- tab$File.Name
 
 
-  acms <- readSCPfromDIANN(acmsTab, colData = DataFrame(tab))
+  acms <- readSCPfromDIANN(acmsTab,
+                           colData = DataFrame(tab))
+  names(acms) <- acms$Sample
 #+end_src
+
+- Learn more about [[https://rformassspectrometry.github.io/QFeatures/articles/QFeatures.html][Quantitative features for mass spectrometry data • QFeatures]]
+
+- Replace 0s by NA:
+
+#+begin_src R
+acms <- zeroIsNA(acms, names(acms))
+#+end_src
+
+- Get rid of precursors mapped to protein groups:
+
+#+begin_src R
+acms <- filterFeatures(acms, ~ !grepl(";", Protein.Names))
+#+end_src
+
+More about (long) processing:
+
+- [[https://www.biorxiv.org/content/10.1101/2021.04.12.439408v2.full][Replication of single-cell proteomics data reveals important
+  computational challenges]]
