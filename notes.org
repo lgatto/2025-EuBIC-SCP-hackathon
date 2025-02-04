@@ -50,10 +50,10 @@
   Heterogeneous Cell Populations by Nanoflow Dual-Trap Single-Column
   Liquid Chromatography]] (2023) Analytical Chemistry. Data: MSV000094571.
 
-* Ai et al. (2025)
+* Working paper/data
 
-- [[https://www.sciencedirect.com/science/article/pii/S1535947625000088#sec6][Single Cell Proteomics Reveals Specific Cellular Subtypes in
-  Cardiomyocytes Derived from Human iPSCs and Adult Hearts]]
+Ai et al. (2025) [[https://www.sciencedirect.com/science/article/pii/S1535947625000088#sec6][Single Cell Proteomics Reveals Specific Cellular
+Subtypes in Cardiomyocytes Derived from Human iPSCs and Adult Hearts]]
 
 From the methods section:
 
@@ -101,19 +101,13 @@ the current working directory.
 First quick check:
 
 #+begin_src R
+  library(tidyverse)
   acmsTab <- read_tsv("./data/aCMs_report.tsv.gz")
 
+  library(scp)
   ## 299 cells
   acms <- readSCPfromDIANN(acmsTab)
   acms
-#+end_src
-
-Preparing metadata
-
-#+begin_src R
-  tab <- tibble(file = acmsTab[[1]]) |>
-    mutate(file = sub("X.+CM_PROJECT\\\\", "", file))
-  tab$date <- ymd(as.integer(substring(tab$file, 1, 6)))
 #+end_src
 
 ** Adult cardiomyocytes (aCMs)
@@ -148,8 +142,24 @@ bioinformatics processing.
 *** Loading the data
 
 #+begin_src R
+  library(tidyverse)
   icmsTab <- read_tsv("./data/iCMs.tsv.gz")
 
+  library(scp)
   ## 2184 cells
   icms <- readSCPfromDIANN(icmsTab)
+#+end_src
+
+* Meta-data [2025-02-04 Tue]
+
+Next stel is to parse the metadata needed for downstream data
+modelling from the filenames.
+
+#+begin_src R
+  library(tidyverse)
+  acmsTab <- read_tsv("./data/aCMs_report.tsv.gz")
+
+  tab <- tibble(file = acmsTab[[1]]) |>
+    mutate(file = sub("X.+CM_PROJECT\\\\", "", file))
+  tab$date <- ymd(as.integer(substring(tab$file, 1, 6)))
 #+end_src
