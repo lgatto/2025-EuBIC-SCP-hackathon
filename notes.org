@@ -393,23 +393,45 @@ Remove sytox cells (all subject 5)
   )
 #+end_src
 
+What has happened with missing values?
+
+#+begin_src R
+  scpModelFilterPlot(sce)
+  scpModelFilterThreshold(sce) <- 3
+  scpModelFilterPlot(sce)
+#+end_src
+
 *** Analysis of variance
 
 #+begin_src R
-(vaRes <- scpVarianceAnalysis(sce))
-vaRes <- scpAnnotateResults(
-    vaRes, rowData(sce), by = "feature", by2 = "Stripped.Sequence"
-)
-scpVariancePlot(vaRes)
-scpVariancePlot(
-    vaRes, top = 20, by = "percentExplainedVar", effect = "Celltype",
-    decreasing = TRUE, combined = FALSE
-) +
-    scpVariancePlot(
-        vaRes, top = 20, by = "percentExplainedVar", effect = "Set",
-        decreasing = TRUE, combined = FALSE
-    ) +
-    plot_layout(ncol = 1, guides = "collect")
+  (vaRes <- scpVarianceAnalysis(sce))
+
+
+  ## Add annotations from the rowData()
+  vaRes <- scpAnnotateResults(
+    vaRes, rowData(sce), by = "feature", by2 = "Precursor.Id"
+  )
+
+  scpVariancePlot(vaRes)
+
+  scpVariancePlot(
+    vaRes, top = 20, by = "percentExplainedVar", effect = "Subject",
+    decreasing = TRUE, combined = FALSE, fcol = "Protein.Names"
+  )
+
+  scpVariancePlot(
+    vaRes, top = 10, by = "percentExplainedVar", effect = "HeartLocation",
+    decreasing = TRUE, combined = FALSE, fcol = "Protein.Names"
+  )
+
+  ## Two figures on one plot
+  scpVariancePlot(
+    vaRes, top = 20, by = "percentExplainedVar", effect = "Subject",
+    decreasing = TRUE, combined = FALSE, fcol = "Protein.Names"
+  ) + scpVariancePlot(
+    vaRes, top = 10, by = "percentExplainedVar", effect = "HeartLocation",
+    decreasing = TRUE, combined = FALSE, fcol = "Protein.Names"
+  ) + plot_layout(ncol = 1, guides = "collect")
 #+end_src
 
 *** Differential abundance analysis
