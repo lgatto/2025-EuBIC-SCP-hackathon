@@ -95,6 +95,9 @@ further processing.
 
 *** Loading the data
 
+The code assumes that the data files reside in a =./data= directory in
+the current working directory.
+
 First quick check:
 
 #+begin_src R
