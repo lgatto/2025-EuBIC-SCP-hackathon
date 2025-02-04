@@ -437,13 +437,24 @@ What has happened with missing values?
 *** Differential abundance analysis
 
 #+begin_src R
-locations <- unique(ai2025$)
-(daRes <- scpDifferentialAnalysis(
-    sce, contrast = list(
-        c("Celltype", "Melanoma", "PDAC"),
-        c("Celltype", "Melanoma", "U-937"),
-        c("Celltype", "PDAC", "U-937")
-    )
-))
-daRes[[1]]
+  locations <- unique(sce$HeartLocation)
+  combinations <- combn(locations, 2)
+  contrasts <- lapply(1:ncol(combinations),
+                      function(i) c("HeartLocation",
+                                    combinations[, i]))
+
+  (daRes <- scpDifferentialAnalysis(
+     sce, contrast = contrasts
+   ))
+
+  daRes[[1]]
+
+  daRes <-
+    scpAnnotateResults(
+      daRes, rowData(sce),
+      by = "feature", by2 = "Precursor.Id")
+
+    scpVolcanoPlot(daRes,
+                   textBy = "Protein.Names",
+                   pointParams = list(aes(colour = Lib.Q.Value)))[[1]]
 #+end_src
