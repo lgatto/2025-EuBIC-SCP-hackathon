@@ -12,14 +12,15 @@
 - New visualisations
 - Write paper! Or vignette.
 
-** Hackathon plan  [1/6]
+** Hackathon plan  [2/7]
 
-1. [X] Find a paper/dataset
-2. [ ] Get data and metadata
-3. [ ] Create a QFeatures object
-4. [ ] Process data
-5. [ ] Model SCP data with scplainer
-6. [ ] Apply trajectory analysis
+1. [X] Find a paper/dataset.
+2. [X] Get the data.
+3. [ ] Get the metadata.
+4. [ ] Create a QFeatures object.
+5. [ ] Process data.
+6. [ ] Model SCP data with scplainer.
+7. [ ] Apply trajectory analysis.
 
 ** Where to find data
 
