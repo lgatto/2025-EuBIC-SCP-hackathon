@@ -196,7 +196,7 @@ above.
 
   tab <- tibble(File.Name = unique(acmsTab[[1]])) |>
     mutate(Sample = sub("^.+CM_PROJECT\\\\", "", File.Name)) |>
-    mutate(File.Name = sub("\\\\", "_", Sample)) |>
+    mutate(Sample = sub("\\\\", "_", Sample)) |>
     mutate(Date = ymd(as.integer(substring(Sample, 1, 6)))) |>
     mutate(Subject = sub("^.+_(Subject[0-9])_.+$", "\\1", Sample)) |>
     mutate(PlateWell = sub("^.+_([A-Z][0-9]+)_.+$", "\\1", Sample)) |>
