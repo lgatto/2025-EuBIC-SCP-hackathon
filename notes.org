@@ -510,7 +510,7 @@ What has happened with missing values?
                    pointParams = list(aes(colour = Lib.Q.Value)))[[1]]
 #+end_src
 
-*** Component analysis
+*** Component analysis [2025-02-05 Wed]
 
 #+begin_src R
   (caRes <- scpComponentAnalysis(
