@@ -428,7 +428,7 @@ Remove sytox cells (all from subject 5)
 
 #+begin_src R
   scpModelFilterThreshold(sce) <- 3
-    sce <- scpModelWorkflow(
+  sce <- scpModelWorkflow(
         sce,
         formula = ~ 1 + ## intercept
             ## normalisation
