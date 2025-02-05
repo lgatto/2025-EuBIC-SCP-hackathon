@@ -29,6 +29,24 @@ Enrico.
 8. [ ] Write a vignette.
 9. [ ] Add the new data to =scpdata=.
 
+** Working groups
+
+*** Intro, mat and meth
+- Enrico
+
+*** Prepare QFeatures, metadata
+- Louise
+
+*** EDA, QC and Processing
+- Hannah, Chris
+
+*** Statistical modelling
+- Chris
+
+*** Downstream
+- Sven, Sam: tscan, and later scverse in Python
+- Hannah: clustering
+
 ** Misc todos
 
 - [ ] Identify important columns in the DIA-NN report file and those that
@@ -167,7 +185,6 @@ First quick check:
 #+end_src
 
 * SCP data analysis [2025-02-04 Tue]
-
 ** Meta-data
 
 Next stel is to parse the metadata needed for downstream data
@@ -365,13 +382,14 @@ removed.
   table(colData(acms)[, c("Subject", "Date")])
 #+end_src
 
-** Log transformation
+** Processing
+*** Log transformation
 
 #+begin_src R
 acms <- logTransform(acms, "precursors", "precursors_log")
 #+end_src
 
-** Aggregation
+*** Aggregation
 
 #+begin_src emacs-lisp
   acms <- aggregateFeatures(acms,
@@ -399,27 +417,32 @@ saveRDS(acms, file = "acms.rds")
 
 Reference: [[https://www.biorxiv.org/content/10.1101/2023.12.14.571792v2][scplainer: using linear models to understand mass spectrometry-based single-cell proteomics data]]
 
-Remove sytox cells (all subject 5)
+*** Modelling
+
+Remove sytox cells (all from subject 5)
 
 #+begin_src R
   sce <- getWithColData(acms, "precursors_log")
   sce <- sce[, sce$HeartLocation != "sytox"]
 #+end_src
 
-*** Modelling
+#+begin_src R
+  scpModelFilterThreshold(sce) <- 3
+  sce <- scpModelWorkflow(
+        sce,
+        formula = ~ 1 + ## intercept
+            ## normalisation
+            MedianIntensity +
+            ## batch effects
+            PlateLetter +
+            Subject +
+            ## biological variability
+            HeartLocation
+    )
+#+end_src
 
 #+begin_src R
-  sce <- scpModelWorkflow(
-      sce,
-      formula = ~ 1 + ## intercept
-          ## normalisation
-          MedianIntensity +
-          ## batch effects
-          PlateLetter +
-          Subject +
-          ## biological variability
-          HeartLocation
-  )
+saveRDS(sce, file = "sce.rds")
 #+end_src
 
 What has happened with missing values?
@@ -508,3 +531,29 @@ What has happened with missing values?
     wrap_plots() +
     plot_layout(guides = "collect")
 #+end_src
+
+#+begin_src R
+  library(scater)
+
+  sce <-addReducedDims(sce, caRes$bySample)
+  sce <- runTSNE(sce, dimred = "APCA_HeartLocation")
+
+  plotTSNE(sce, colour_by = "HeartLocation") +
+    plotTSNE(sce, colour_by = "Subject") +
+    plotTSNE(sce, colour_by = "PlateLetter") +
+    plotTSNE(sce, colour_by = "MedianIntensity")
+
+#+end_src
+
+#+begin_src R
+scebr <- scpRemoveBatchEffect(
+  sce, effects = c("Subject", "PlateLetter", "MedianIntensity"),
+  intercept = TRUE)
+#+end_src
+
+#+begin_src R
+saveRDS(sce, file = "sce.rds")
+saveRDS(scebr, file = "scebr.rds")
+#+end_src
+
+** Downstream
