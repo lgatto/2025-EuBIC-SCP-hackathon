@@ -1,0 +1,290 @@
+
+```{r}
+library(QFeatures)
+library(scp)
+library(dplyr)
+```
+
+```{r}
+longFormSE <- function(object, colvars = NULL, rowvars = NULL,
+                       index = seq_along(assays(object)),
+                       na.rm = FALSE) {
+    ## Check that indices are within bounds
+    if (max(index) > length(assays(object)) | min(index) < 1)
+        stop("Index out of (assay) bounds.")
+    ## Check that all colvars exist
+    if (!is.null(colvars)) {
+        if (!all(colvars %in% names(colData(object))))
+            stop("Some 'colvars' not found in colData(.).")
+    }
+    ## Check that all rowvars exist
+    if (!is.null(rowvars)) {
+        if (!all(rowvars %in% names(rowData(object))))
+            stop("Some 'rowvars' not found in rowData(.).")
+    }
+    ## Need names for the assayNames columns. If the object's assays don't have
+    ## any names, use the index set above.
+    if (is.null(nms <- assayNames(object)))
+        nms <- index
+    res <- lapply(seq_along(index),
+                  function(i) {
+                      ans <- reshape2::melt(assay(object, index[i]),
+                                            varnames = c("rowname", "colname"),
+                                            value.name = "value",
+                                            as.is = TRUE,
+                                            na.rm = na.rm)
+                      ans$assayName <- nms[i]
+                      rownames(ans) <- NULL
+                      ans
+                  })
+    res <- do.call(rbind, res)
+    if (!is.null(colvars)) { ## Add colData variables.
+        ## Need object to have colnames
+        if (is.null(colnames(object)))
+            colnames(object) <- seq_len(ncol(object))
+        cd <- colData(object)[as.character(res$colname),
+                              colvars,
+                              drop = FALSE]
+        rownames(cd) <- NULL
+        res <- cbind(res, cd)
+    }
+    if (!is.null(rowvars)) { ## Add rowData variables
+        ## Need object to have rownames
+        if (is.null(rownames(object)))
+            rownames(object) <- seq_len(nrow(object))
+        rd <- rowData(object)[as.character(res$rowname),
+                              rowvars,
+                              drop = FALSE]
+        rownames(rd) <- NULL
+        res <- cbind(res, rd)
+    }
+    ## as(res, "DataFrame")
+    res
+}
+```
+
+```{r}
+
+library(scp)
+library(data.table)
+library(ggplot2)
+library(patchwork)
+library(SingleCellExperiment)
+library(scater)
+
+## Get PSM data
+report <- fread("~/Documents/.localData/SCP/cardiomiocytes-single-cell-proteomics-data/aCMs/report.tsv", sep = "\t")
+## Get annotations
+annot <- DataFrame(File.Name = unique(report$File.Name))
+moreAnnots <- do.call(rbind, strsplit(annot$File.Name, "_"))
+annot$Date <- sub("PRO.*\\\\", "", moreAnnots[, 2])
+annot$Subject <- sub(".*([1-4]).*", "subject\\1", moreAnnots[, 4])
+annot$Location <- tolower(moreAnnots[, 6])
+annot$Location[annot$Location %in% c("1", "d")] <- "sytox"
+annot$PlateWell <- moreAnnots[, 7]
+annot$PlateRow <- gsub("[0-9]*", "", annot$PlateWell)
+annot$PlateCol <- gsub("[A-Z]*", "", annot$PlateWell)
+annot$Undocument <- moreAnnots[, 8]
+annot$FileIndex <- sub(".d", "", moreAnnots[, 10])
+annot$runCol <- annot$File.Name
+
+## Format to QFeatures
+acms <- readSCPfromDIANN(report, colData = annot)
+acms <- zeroIsNA(acms, names(acms))
+```
+
+# Quality control 
+
+## PSM filtering
+
+Possible QC information 
+
+```{r}
+"Proteotypic"
+"Q.Value"
+"PEP"
+"Protein.Q.Value"
+
+
+"RT"
+"Predicted.RT"             
+"Predicted.iRT"             "First.Protein.Description" "Lib.Q.Value"              
+"Lib.PG.Q.Value"            "Ms1.Profile.Corr"          "Ms1.Normalised"           
+"Normalisation.Factor"      "Evidence"                  "Spectrum.Similarity"      
+ "Averagine"                 "Mass.Evidence"             "CScore"                   
+ "Decoy.Evidence"            "Decoy.CScore"              "Fragment.Quant.Raw"       
+"Fragment.Correlations"     "MS2.Scan"                  "IM"                       
+"iIM"                       "Predicted.IM"              "Predicted.iIM"   
+```
+
+
+
+```{r}
+rd <- rbindRowData(acms, names(acms))
+rd <- cbind(rd, colData(acms)[rd$assay, ])
+```
+
+```{r, fig.width=10, fig.height=10}
+rd <- rbindRowData(acms, names(acms))
+ggplot(data.frame(rd)) +
+    aes(y = -log10(Q.Value), 
+        x = assay) +
+    facet_wrap(Subject ~ Location, scales = "free_x") +
+    geom_boxplot()
+```
+
+
+```{r}
+table(isProteotypic = rd$Proteotypic, 
+      isProteinGroup = )
+```
+
+
+```{r}
+ggplot(data.frame(rd)) +
+    aes(rd$Q.Value)
+```
+
+```{r}
+tmp <- aggregateFeatures(acms, names(acms), fcol = "")
+library("camprotR")
+contaminants <- get_ccp_crap()
+data.frame(rd) |> 
+    filter(Protein.Ids %in% contaminants, 
+           Subject != "Subject5") |> 
+    ggplot() +
+    aes(y = log2(Precursor.Quantity), 
+        x = assay, 
+        fill = Location) +
+    geom_violin() +
+    geom_point() +
+    facet_wrap(~ Subject, scales = "free_x")
+```
+
+
+
+```{r}
+## PSM filtering
+## Remove protein groups
+acms <- filterFeatures(acms, ~ !grepl(";", Protein.Names))
+```
+
+## Sample filtering
+
+```{r}
+for (i in names(acms)) {
+    colData(acms)[colnames(acms)[[i]], "MedianIntensity"] <- median(
+        log2(assay(acms[[i]])), na.rm = TRUE
+    )   
+}
+```
+
+
+```{r}
+acms$TotalIds <- nrows(acms)
+data.frame(colData(acms)) |> 
+    filter(Subject != "Subject5") |> 
+    ggplot() +
+    aes(y = TotalIds, 
+        x = Location, 
+        fill = Location) +
+    geom_violin() +
+    geom_point() +
+    facet_wrap(~Subject, scales = "free_x")
+```
+
+```{r}
+acms <- medianCVperCell(
+    acms,
+    i = 1:299,
+    groupBy = "Protein.Names",
+    nobs = 3,
+    na.rm = TRUE,
+    colDataName = "MedianCV",
+    norm = "none"
+)
+```
+
+
+```{r}
+colData(acms) |>
+    data.frame() |>
+    ggplot() +
+    aes(y = MedianIntensity,
+        x = TotalIds,
+        colour = MedianCV) +
+    geom_point() +
+    scale_colour_continuous(type = "viridis")
+colData(acms) |>
+    data.frame() |>
+    ggplot() +
+    aes(x = MedianIntensity,
+        y = TotalIds,
+        colour = Subject) +
+    geom_point()
+colData(acms) |>
+    data.frame() |>
+    ggplot() +
+    aes(x = MedianIntensity,
+        y = TotalIds,
+        colour = Date) +
+    geom_point()
+colData(acms) |>
+    data.frame() |>
+    ggplot() +
+    aes(x = MedianIntensity,
+        y = TotalIds,
+        colour = Location) +
+    geom_point()
+```
+
+## Data processing
+
+
+```{r}
+## Join assays
+expl <- lapply(experiments(acms), function(x) {
+    rownames(x) <- rowData(x)$Precursor.Id
+    x
+})
+experiments(acms) <- List(expl)
+acms <- joinAssays(acms, names(acms), "precursors")
+## log-transform
+acms <- logTransform(acms, "precursors", "precursors_log")
+
+acms <- aggregateFeatures(
+    acms, "precursors_log", "peptides",
+    fcol = "Modified.Sequence", fun = colMedians,
+    na.rm = TRUE
+)
+acms <- aggregateFeatures(
+    acms, "peptides", "proteins",
+    fcol = "Protein.Names", fun = colMedians,
+    na.rm = TRUE
+)
+```
+
+
+
+
+
+
+```{r}
+sce <- readRDS("data/sce.rds")
+
+lf <- longFormSE(sce, colvars = c("Subject", "PlateRow", "Location")) |> 
+    filter(!is.na(value))
+
+
+df <- group_by(lf, rowname) |> 
+    summarise(nSubject = length(unique(Subject)),
+              nLocation = length(unique(Location)),
+              nPlateRow = length(unique(PlateRow)))
+              
+
+              ggplot(df) +
+    aes(x = ngroups) +
+    geom_histogram()
+
+```
+
