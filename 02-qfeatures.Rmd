@@ -1,0 +1,174 @@
+For creating the `QFeatures` object we need the following packages.
+
+```{r, eval = FALSE}
+# 
+library("scp")
+# For data manipulation and visualisations 
+library("tidyverse")
+```
+
+We can now read in the results file from DIA-NN. We use the file "report.tsv".
+
+```{r, eval = FALSE}
+acmsTab <- read_tsv("report.tsv")
+```
+
+We can use the `readSCPfromDIANN` to have an initial look at the data.
+
+```{r,eval = FALSE}
+acms <- readSCPfromDIANN(acmsTab)
+acms
+```
+
+Doing this, we already create a `QFeatures` object, but we want extract additional metadata from the file names.
+
+We want to extract:
+
+-   File name
+
+-   Sample name
+
+-   Acquisition date
+
+-   Subject number
+
+-   Location in the heart from which each cell was extracted (Lvendo, Lvepi, Lvmid, RV, sytox)
+
+-   Position in the 384 well plate
+
+-   Position (BA18, ...)
+
+We see that `acms` object contains 299 assays (which means that299 cells were analysed).
+
+Our goal is then to create a data frame with 299 rows, one for each cell, with the information defined above as the columns.
+
+```{r, eval = FALSE}
+# Extracting file name, sample name, date, subject, well position and position
+tab <- tibble(File.Name = unique(acmsTab[[1]])) |>
+  mutate(Sample = sub("^.+CM_PROJECT\\\\", "", File.Name)) |>
+  mutate(Sample = sub("\\\\", "_", Sample)) |>
+  mutate(Date = ymd(as.integer(substring(Sample, 1, 6)))) |>
+  mutate(Subject = sub("^.+_(Subject[0-9])_.+$", "\\1", Sample)) |>
+  mutate(PlateWell = sub("^.+_([A-Z][0-9]+)_.+$", "\\1", Sample)) |>
+  mutate(Position = sub("^.+_([A-Z]+[0-9]+)_1_[0-9]+\\.d$", "\\1", Sample))
+
+# Getting the plate letters
+tab$PlateLetter <- substring(tab$PlateWell, 1, 1)
+
+# Extracting the heart locations 
+tab$HeartLocation <- NA
+ExpectedLocations <- c("Lvendo", "Lvepi", "Lvmid", "RV", "sytox")
+for (i in 1:5) {
+  loc <- ExpectedLocations[i]
+  tab$HeartLocation[grep(loc, tab$File.Name, ignore.case = TRUE)] <- loc
+}
+```
+
+After creating the data frame we can check that the values in the different columns.
+
+```{r,eval = FALSE}
+table(tab$Subject)
+table(tab$HeartLocation)
+table(tab$Date)
+```
+
+The output should look like this:
+
+```{r, eval = FALSE}
+> table(tab$Subject)
+
+Subject3 Subject4 Subject5 
+     156      122       21 
+> table(tab$HeartLocation)
+
+Lvendo  Lvepi  Lvmid     RV  sytox 
+    69     95     52     62     21 
+> table(tab$Date)
+
+2022-10-19 2022-10-22 2022-10-24 
+       156         21        122 
+```
+
+We can see that there are 21 cells from Subject5, 21 cells that falls into the "sytox" category and that 21 cells were analysed on one specific date. And running the code below, we can indeed see that all samples from Subject5 were analysed on the same date, and that all of these cells falls into the "sytox" category of the `HeartLocation` column.
+
+```{r, eval = FALSE}
+table(tab[,c("Date","Subject")])
+table(tab[,c("HeartLocation","Subject")])
+```
+
+```{r, eval = FALSE}
+> table(tab[,c("Date","Subject")])
+            Subject
+Date         Subject3 Subject4 Subject5
+  2022-10-19      156        0        0
+  2022-10-22        0        0       21
+  2022-10-24        0      122        0
+  
+> table(tab[,c("HeartLocation","Subject")])
+             Subject
+HeartLocation Subject3 Subject4 Subject5
+       Lvendo       35       34        0
+       Lvepi        62       33        0
+       Lvmid        29       23        0
+       RV           30       32        0
+       sytox         0        0       21
+```
+
+Sytox is a stain used for assessing cell viability, and we can therefore remove these cells before we start doing statistical analysis.
+
+To create the `QFeatures` object, we need to add a column `runCol` to properly associate the `colData` to each sample.
+
+```{r, eval = FALSE}
+tab$runCol <- tab$File.Name
+```
+
+Now we can create the `QFeatures` object, and include the metadata that we extracted.
+
+```{r, eval = FALSE}
+acms <- readSCPfromDIANN(acmsTab,
+                         colData = DataFrame(tab))
+# Setting the names of the QFeatures objects 
+names(acms) <- acms$Sample
+```
+
+Replace 0 by NA for downstream analysis.
+
+```{r,eval = FALSE}
+acms <- zeroIsNA(acms, names(acms))
+```
+
+Like the authors of the paper, we will remove all the precursors that have been mapped to protein groups. Having peptides that map to more than one protein will make quantitative analysis more complicated.
+
+```{r, eval = FALSE}
+# ";" in the protein name indicate that the identified peptide maps to more than one protein
+acms <- filterFeatures(acms, ~ !grepl(";", Protein.Names))
+```
+
+If you wish, you can also do further filtering of the data, for instance the posterior error probability (PEP) or the protein Q-values.
+
+```{r,eval = FALSE}
+acms |>
+  filterFeatures(~ !grepl(";", Protein.Names)) |>
+  filterFeatures(~ PEP < 0.01) |>
+  filterFeatures(~ Protein.Q.Value < 0.05)
+```
+
+Currently, the row names are arbitrary indices, but we want to rename then to the precursor identifications to ease downstream analysis.
+
+```{r, eval = FALSE}
+# Iterate of a list of assays and replace their rownames.
+expl <- lapply(experiments(acms),
+       function(x) {
+         rownames(x) <- rowData(x)$Precursor.Id
+         return(x)
+       })
+
+# Replace the orginal assays with the row-renamed ones.
+experiments(acms) <- List(expl)
+```
+
+Lastly, before the quality control and exploratory data analysis, we can to join all the assays based on the precursors.
+
+```{r, eval = FALSE}
+acms <- joinAssays(acms, i = names(acms), name = "precursors")
+```
