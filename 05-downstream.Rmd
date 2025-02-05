@@ -1,0 +1,23 @@
+##TSCAN
+#test without reducedDims 
+
+
+sce=readRDS("./out/sce_batch_removed.rds")
+df=assay(sce)
+colnames(df) <- as.character(sapply(colnames(df), function(x) tail(strsplit(x, "\\\\")[[1]], 1)))
+
+
+
+library("TSCAN")
+
+#error here
+lpsmclust <- exprmclust(df,reduce=FALSE)
+
+##test with reducedDims still in file
+
+sce=readRDS("./out/sce.rds")
+caRes=readRDS("./out/caRes.rds")
+
+
+df=t(reducedDims(sce)[[7]])
+colnames(df) <- as.character(sapply(colnames(df), function(x) tail(strsplit(x, "\\\\")[[1]], 1)))
