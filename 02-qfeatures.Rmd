@@ -89,6 +89,33 @@ Lvendo  Lvepi  Lvmid     RV  sytox
        156         21        122 
 ```
 
+We can see that there are 21 cells from Subject5, 21 cells that falls into the "sytox" category and that 21 cells were analysed on one specific date. And running the code below, we can indeed see that all samples from Subject5 were analysed on the same date, and that all of these cells falls into the "sytox" category of the `HeartLocation` column.
+
+```{r, eval = FALSE}
+table(tab[,c("Date","Subject")])
+table(tab[,c("HeartLocation","Subject")])
+```
+
+```{r, eval = FALSE}
+> table(tab[,c("Date","Subject")])
+            Subject
+Date         Subject3 Subject4 Subject5
+  2022-10-19      156        0        0
+  2022-10-22        0        0       21
+  2022-10-24        0      122        0
+  
+> table(tab[,c("HeartLocation","Subject")])
+             Subject
+HeartLocation Subject3 Subject4 Subject5
+       Lvendo       35       34        0
+       Lvepi        62       33        0
+       Lvmid        29       23        0
+       RV           30       32        0
+       sytox         0        0       21
+```
+
+Sytox is a stain used for assessing cell viability, and we can therefore remove these cells before we start doing statistical analysis.
+
 To create the `QFeatures` object, we need to add a column `runCol` to properly associate the `colData` to each sample.
 
 ```{r, eval = FALSE}
