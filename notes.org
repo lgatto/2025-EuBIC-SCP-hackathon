@@ -488,9 +488,23 @@ What has happened with missing values?
                    pointParams = list(aes(colour = Lib.Q.Value)))[[1]]
 #+end_src
 
-*** Dimensionality reduction
+*** Component analysis
 
 #+begin_src R
-  caRes <- scpComponentAnalysis(
-    sce, ncomp = 2, method = "ACPA")
+  (caRes <- scpComponentAnalysis(
+     sce, ncomp = 15, method = "APCA"))
+
+  caResCells <- caRes$bySample
+  sce$cell <- colnames(sce)
+  caResCells <- scpAnnotateResults(caResCells,
+                                   colData(sce), by = "cell")
+
+
+  scpComponentPlot(
+    caResCells,
+    pointParams = list(aes(colour = HeartLocation,
+                           shape = Subject),
+                       size = 3)) |>
+    wrap_plots() +
+    plot_layout(guides = "collect")
 #+end_src
