@@ -292,6 +292,16 @@ acms <- joinAssays(acms, i = names(acms), name = "precursors")
 
 - Hannah's discussion
 
+#+begin_src R
+  colData(acms) |>
+    as.data.frame() |>
+    mutate(PlateNumber = as.numeric(substr(PlateWell, 2, 3))) |>
+    ggplot(aes(x = PlateNumber,
+               y = PlateLetter,
+               fill = HeartLocation)) +
+    geom_tile()
+#+end_src
+
 ** QC
 
 See [[https://uclouvain-cbio.github.io/SCP.replication/articles/scplainer_leduc2022.html#sample-quality-control][scplainer: reanalysis of the nPOP dataset (Leduc et al. 2022) •
@@ -405,6 +415,7 @@ Remove sytox cells (all subject 5)
           ## normalisation
           MedianIntensity +
           ## batch effects
+          PlateLetter +
           Subject +
           ## biological variability
           HeartLocation
@@ -475,4 +486,11 @@ What has happened with missing values?
     scpVolcanoPlot(daRes,
                    textBy = "Protein.Names",
                    pointParams = list(aes(colour = Lib.Q.Value)))[[1]]
+#+end_src
+
+*** Dimensionality reduction
+
+#+begin_src R
+  caRes <- scpComponentAnalysis(
+    sce, ncomp = 2, method = "ACPA")
 #+end_src
