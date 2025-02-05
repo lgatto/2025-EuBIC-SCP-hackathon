@@ -1,7 +1,14 @@
 ---
 title: "Application of the scp pipeline on adult cardiomyocytes data"
 author:
+- name: Sven Berres
+- name: Louise Buur
 - name: Laurent Gatto
+- name: Enrico Massignani
+- name: Sam van Puyenbroeck
+- name: Uladzislau Vadadokhau
+- name: Christophe Vanderaa
+- name: Hannah Voß
 package: QFeatures
 abstract: >
  Application of the `scp` pipeline on adult cardiomyocytes data
