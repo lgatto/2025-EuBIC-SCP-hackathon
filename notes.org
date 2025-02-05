@@ -209,6 +209,8 @@ above.
     mutate(PlateWell = sub("^.+_([A-Z][0-9]+)_.+$", "\\1", Sample)) |>
     mutate(Position = sub("^.+_([A-Z]+[0-9]+)_1_[0-9]+\\.d$", "\\1", Sample))
 
+  tab$PlateLetter <- substring(tab$PlateWell, 1, 1)
+
   tab$HeartLocation <- NA
   ExpectedLocations <- c("Lvendo", "Lvepi", "Lvmid", "RV", "sytox")
   for (i in 1:5) {
@@ -252,6 +254,15 @@ acms <- zeroIsNA(acms, names(acms))
 acms <- filterFeatures(acms, ~ !grepl(";", Protein.Names))
 #+end_src
 
+Also possible
+
+#+begin_src R
+  acms |>
+    filterFeatures(~ !grepl(";", Protein.Names)) |>
+    filterFeatures(~ PEP < 0.01) |>
+    filterFeatures(~ Protein.Q.Value < 0.05)
+#+end_src
+
 More about (long) processing (we want to do minimal processing):
 
 - [[https://www.biorxiv.org/content/10.1101/2021.04.12.439408v2.full][Replication of single-cell proteomics data reveals important
@@ -274,8 +285,12 @@ Let's use the =Precursor.Id= in the =rowData()= to set the rownames.
 Let's join the 299 assays
 
 #+begin_src R
-acms <- joinAssay(acms, i = names(acms), name = "precursors")
+acms <- joinAssays(acms, i = names(acms), name = "precursors")
 #+end_src
+
+** Exploratory data analysis
+
+- Hannah's discussion
 
 ** QC
 
@@ -362,7 +377,6 @@ acms <- logTransform(acms, "precursors", "precursors_log")
                             fcol = "Protein.Ids",
                             fun = colMedians,
                             na.rm = TRUE)
-
 #+end_src
 
 ** Serialise QFeatures
