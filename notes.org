@@ -31,11 +31,11 @@ Enrico.
 9. [ ] Add two new data to =scpdata= and =MsDataHub= (adult and
    induced cariomtocytes)
 
-** Vignette working groups [3/5] [2025-02-05 Wed] [2025-02-06 Thu]
+** Vignette working groups [4/5] [2025-02-05 Wed] [2025-02-06 Thu]
 
 - [X] Intro, mat and meth (*Enrico*)
 - [X] Prepare QFeatures, metadata (*Louise*)
-- [ ] EDA, QC and Processing (*Hannah*, *Chris*)
+- [X] EDA, QC and Processing (*Hannah*, *Chris*)
 - [X] Statistical modelling (*Laurent*)
 - [ ] Downstream (*Sven*, *Sam*: tscan, and later scverse in Python;
   *Hannah*: clustering)
@@ -49,6 +49,10 @@ Enrico.
   =colnames(qf)= (see [[https://github.com/waldronlab/MultiAssayExperiment/issues/338][#338 Error in `colnames<-,ExperimentList`]]).
 - [X] Create a helper function to set assay rownames. See [[https://github.com/rformassspectrometry/QFeatures/pull/219][#219 fix
   fnames for readQFeatures()]].
+- [ ] Need and =endoapply()= for QFeatures. Maybe already available
+  via =MAE=?
+- [ ] Warn when running =computeMedianCVperCell()= on label-free data,
+  i.e assays with a single column.
 
 To use this version, re-install =QFeatures= with
 
