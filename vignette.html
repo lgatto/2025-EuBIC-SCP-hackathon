@@ -2132,10 +2132,23 @@ expl &lt;- lapply(experiments(acms),
        })
 
 ## Replace the orginal assays with the row-renamed ones.
-experiments(acms) &lt;- List(expl)</code></pre>
+experiments(acms) &lt;- List(expl)
+
+head(rownames(acms[[1]]))</code></pre>
+<pre><code>## [1] &quot;AAAEELLAR2&quot;                &quot;AAAEVNQDYGLDPK2&quot;          
+## [3] &quot;AAALEQFK2&quot;                 &quot;AAAVLPVLDLAQR2&quot;           
+## [5] &quot;AAAVPVEFQEHHLSEVQNMASEEK3&quot; &quot;AAAVPVEFQEHHLSEVQNMASEEK4&quot;</code></pre>
 <p>Lastly, before the quality control and exploratory data analysis, we
 can to join all the assays based on the precursors.</p>
 <pre class="r"><code>(acms &lt;- joinAssays(acms, i = names(acms), name = &quot;precursors&quot;))</code></pre>
+<pre><code>## An instance of class QFeatures containing 300 assays:
+##  [1] 221019_CM_SUBJECT-03_CMs_Subject3_Lvendo_A13_BA14_1_7445.d: SingleCellExperiment with 6634 rows and 1 columns 
+##  [2] 221019_CM_SUBJECT-03_CMs_Subject3_Lvendo_A14_BA15_1_7446.d: SingleCellExperiment with 4326 rows and 1 columns 
+##  [3] 221019_CM_SUBJECT-03_CMs_Subject3_Lvendo_A15_BA16_1_7447.d: SingleCellExperiment with 6263 rows and 1 columns 
+##  ...
+##  [298] 221024_Subject-04_CMs_Subject4_D_RV_H4_BH7_1_7858.d: SingleCellExperiment with 2491 rows and 1 columns 
+##  [299] 221024_Subject-04_CMs_Subject4_D_RV_I1_BI11_1_7861.d: SingleCellExperiment with 858 rows and 1 columns 
+##  [300] precursors: SingleCellExperiment with 12731 rows and 299 columns</code></pre>
 </div>
 <div id="exploratory-data-analysis-and-quality-control" class="section level1" number="3">
 <h1><span class="header-section-number">3</span> Exploratory data analysis and quality control</h1>
@@ -2146,6 +2159,14 @@ can to join all the assays based on the precursors.</p>
 analyses. The <code>logTransfrorm()</code> function will create a new assay,
 named <code>precursors_log</code>.</p>
 <pre class="r"><code>(acms &lt;- logTransform(acms, &quot;precursors&quot;, &quot;precursors_log&quot;))</code></pre>
+<pre><code>## An instance of class QFeatures containing 301 assays:
+##  [1] 221019_CM_SUBJECT-03_CMs_Subject3_Lvendo_A13_BA14_1_7445.d: SingleCellExperiment with 6634 rows and 1 columns 
+##  [2] 221019_CM_SUBJECT-03_CMs_Subject3_Lvendo_A14_BA15_1_7446.d: SingleCellExperiment with 4326 rows and 1 columns 
+##  [3] 221019_CM_SUBJECT-03_CMs_Subject3_Lvendo_A15_BA16_1_7447.d: SingleCellExperiment with 6263 rows and 1 columns 
+##  ...
+##  [299] 221024_Subject-04_CMs_Subject4_D_RV_I1_BI11_1_7861.d: SingleCellExperiment with 858 rows and 1 columns 
+##  [300] precursors: SingleCellExperiment with 12731 rows and 299 columns 
+##  [301] precursors_log: SingleCellExperiment with 12731 rows and 299 columns</code></pre>
 <p>While we will be performing our analyses with precursor data, below we
 show how to aggregate these data into peptide and protein data.</p>
 <pre class="r"><code>acms &lt;- aggregateFeatures(acms,
@@ -2153,15 +2174,28 @@ show how to aggregate these data into peptide and protein data.</p>
                           name = &quot;peptides&quot;,
                           fcol = &quot;Modified.Sequence&quot;,
                           fun = colMedians,
-                          na.rm = TRUE)
-
-acms &lt;- aggregateFeatures(acms,
+                          na.rm = TRUE)</code></pre>
+<pre><code>## Your quantitative data contain missing values. Please read the relevant
+## section(s) in the aggregateFeatures manual page regarding the effects
+## of missing values on data aggregation.</code></pre>
+<pre class="r"><code>acms &lt;- aggregateFeatures(acms,
                           i = &quot;peptides&quot;,
                           name = &quot;proteins&quot;,
                           fcol = &quot;Protein.Ids&quot;,
                           fun = colMedians,
-                          na.rm = TRUE)
-acms</code></pre>
+                          na.rm = TRUE)</code></pre>
+<pre><code>## Your quantitative data contain missing values. Please read the relevant
+## section(s) in the aggregateFeatures manual page regarding the effects
+## of missing values on data aggregation.</code></pre>
+<pre class="r"><code>acms</code></pre>
+<pre><code>## An instance of class QFeatures containing 303 assays:
+##  [1] 221019_CM_SUBJECT-03_CMs_Subject3_Lvendo_A13_BA14_1_7445.d: SingleCellExperiment with 6634 rows and 1 columns 
+##  [2] 221019_CM_SUBJECT-03_CMs_Subject3_Lvendo_A14_BA15_1_7446.d: SingleCellExperiment with 4326 rows and 1 columns 
+##  [3] 221019_CM_SUBJECT-03_CMs_Subject3_Lvendo_A15_BA16_1_7447.d: SingleCellExperiment with 6263 rows and 1 columns 
+##  ...
+##  [301] precursors_log: SingleCellExperiment with 12731 rows and 299 columns 
+##  [302] peptides: SingleCellExperiment with 11115 rows and 299 columns 
+##  [303] proteins: SingleCellExperiment with 2479 rows and 299 columns</code></pre>
 </div>
 <div id="statistical-modelling" class="section level1" number="5">
 <h1><span class="header-section-number">5</span> Statistical modelling</h1>
@@ -2232,24 +2266,24 @@ hackathon</a>.</p>
 ## [29] cli_3.6.3                   rmarkdown_2.29             
 ## [31] crayon_1.5.3                metapod_1.14.0             
 ## [33] tzdb_0.4.0                  httr_1.4.7                 
-## [35] reshape2_1.4.4              cachem_1.1.0               
-## [37] zlibbioc_1.52.0             AnnotationFilter_1.30.0    
-## [39] BiocManager_1.30.25         XVector_0.46.0             
-## [41] vctrs_0.6.5                 Matrix_1.7-0               
-## [43] jsonlite_1.8.9              slam_0.1-55                
-## [45] bookdown_0.42               hms_1.1.3                  
-## [47] IHW_1.34.0                  ggrepel_0.9.6              
-## [49] clue_0.3-66                 jquerylib_0.1.4            
-## [51] glue_1.8.0                  stringi_1.8.4              
-## [53] gtable_0.3.6                UCSC.utils_1.2.0           
-## [55] munsell_0.5.1               lpsymphony_1.34.0          
-## [57] pillar_1.10.1               htmltools_0.5.8.1          
-## [59] GenomeInfoDbData_1.2.13     R6_2.5.1                   
-## [61] evaluate_1.0.3              lattice_0.22-6             
-## [63] bslib_0.8.0                 Rcpp_1.0.14                
-## [65] fdrtool_1.2.18              SparseArray_1.6.1          
-## [67] xfun_0.50                   MsCoreUtils_1.18.0         
-## [69] pkgconfig_2.0.3</code></pre>
+## [35] reshape2_1.4.4              BiocBaseUtils_1.8.0        
+## [37] cachem_1.1.0                zlibbioc_1.52.0            
+## [39] AnnotationFilter_1.30.0     BiocManager_1.30.25        
+## [41] XVector_0.46.0              vctrs_0.6.5                
+## [43] Matrix_1.7-0                jsonlite_1.8.9             
+## [45] slam_0.1-55                 bookdown_0.42              
+## [47] hms_1.1.3                   IHW_1.34.0                 
+## [49] ggrepel_0.9.6               clue_0.3-66                
+## [51] jquerylib_0.1.4             glue_1.8.0                 
+## [53] stringi_1.8.4               gtable_0.3.6               
+## [55] UCSC.utils_1.2.0            munsell_0.5.1              
+## [57] lpsymphony_1.34.0           pillar_1.10.1              
+## [59] htmltools_0.5.8.1           GenomeInfoDbData_1.2.13    
+## [61] R6_2.5.1                    evaluate_1.0.3             
+## [63] lattice_0.22-6              bslib_0.8.0                
+## [65] Rcpp_1.0.14                 fdrtool_1.2.18             
+## [67] SparseArray_1.6.1           xfun_0.50                  
+## [69] MsCoreUtils_1.18.0          pkgconfig_2.0.3</code></pre>
 </div>
 <div id="references" class="section level1 unnumbered">
 <h1>References</h1>

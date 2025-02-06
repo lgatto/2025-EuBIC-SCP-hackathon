@@ -204,7 +204,7 @@ acms |>
 Currently, the row names are arbitrary indices, but we want to rename
 then to the precursor identifications to ease downstream analysis.
 
-```{r setrownames, eval = FALSE}
+```{r setrownames, eval = TRUE}
 ## Iterate of a list of assays and replace their rownames.
 expl <- lapply(experiments(acms),
        function(x) {
@@ -214,12 +214,14 @@ expl <- lapply(experiments(acms),
 
 ## Replace the orginal assays with the row-renamed ones.
 experiments(acms) <- List(expl)
+
+head(rownames(acms[[1]]))
 ```
 
 Lastly, before the quality control and exploratory data analysis, we
 can to join all the assays based on the precursors.
 
-```{r joinPrecursors, eval = FALSE}
+```{r joinPrecursors, eval = TRUE}
 (acms <- joinAssays(acms, i = names(acms), name = "precursors"))
 ```
 
@@ -231,14 +233,14 @@ We start by log-transforming our data for downstream statistical
 analyses. The `logTransfrorm()` function will create a new assay,
 named `precursors_log`.
 
-```{r logtrans, eval = FALSE}
+```{r logtrans, eval = TRUE}
 (acms <- logTransform(acms, "precursors", "precursors_log"))
 ```
 
 While we will be performing our analyses with precursor data, below we
 show how to aggregate these data into peptide and protein data.
 
-```{r aggregation, eval = FALSE}
+```{r aggregation, eval = TRUE}
 acms <- aggregateFeatures(acms,
                           i = "precursors_log",
                           name = "peptides",
