@@ -8,3 +8,4 @@ data/acms.rds
 data/aCMs_report.zip
 data/iCMs_report.zip
 vignette_cache
+sce.rds
