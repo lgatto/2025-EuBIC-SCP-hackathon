@@ -240,22 +240,27 @@ named `precursors_log`.
 While we will be performing our analyses with precursor data, below we
 show how to aggregate these data into peptide and protein data.
 
-```{r aggregation, eval = TRUE}
+```{r aggregation1, eval = TRUE}
 acms <- aggregateFeatures(acms,
                           i = "precursors_log",
                           name = "peptides",
                           fcol = "Modified.Sequence",
                           fun = colMedians,
                           na.rm = TRUE)
+acms[["peptides"]]
+```
 
+
+```{r aggregation2, eval = TRUE}
 acms <- aggregateFeatures(acms,
                           i = "peptides",
                           name = "proteins",
                           fcol = "Protein.Ids",
                           fun = colMedians,
                           na.rm = TRUE)
-acms
+acms[["peptides"]]
 ```
+
 # Statistical modelling
 
 We will model the data following the *scplainer* pipeline

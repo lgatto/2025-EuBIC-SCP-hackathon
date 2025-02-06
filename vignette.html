@@ -2178,6 +2178,23 @@ show how to aggregate these data into peptide and protein data.</p>
 <pre><code>## Your quantitative data contain missing values. Please read the relevant
 ## section(s) in the aggregateFeatures manual page regarding the effects
 ## of missing values on data aggregation.</code></pre>
+<pre class="r"><code>acms[[&quot;peptides&quot;]]</code></pre>
+<pre><code>## class: SingleCellExperiment 
+## dim: 11115 299 
+## metadata(0):
+## assays(2): assay aggcounts
+## rownames(11115): AAAEDVNVTFEDQQK AAAEELLAR ... YYTVFDR YYVTIIDAPGHR
+## rowData names(12): Protein.Group Protein.Ids ... Lib.PG.Q.Value .n
+## colnames(299):
+##   X:\TimsTOF-SCP\Data\CM_PROJECT\221019_CM_SUBJECT-03\CMs_Subject3_Lvendo_A13_BA14_1_7445.d
+##   X:\TimsTOF-SCP\Data\CM_PROJECT\221019_CM_SUBJECT-03\CMs_Subject3_Lvendo_A14_BA15_1_7446.d
+##   ...
+##   X:\TimsTOF-SCP\Data\CM_PROJECT\221024_Subject-04\CMs_Subject4_D_RV_H4_BH7_1_7858.d
+##   X:\TimsTOF-SCP\Data\CM_PROJECT\221024_Subject-04\CMs_Subject4_D_RV_I1_BI11_1_7861.d
+## colData names(0):
+## reducedDimNames(0):
+## mainExpName: NULL
+## altExpNames(0):</code></pre>
 <pre class="r"><code>acms &lt;- aggregateFeatures(acms,
                           i = &quot;peptides&quot;,
                           name = &quot;proteins&quot;,
@@ -2187,15 +2204,23 @@ show how to aggregate these data into peptide and protein data.</p>
 <pre><code>## Your quantitative data contain missing values. Please read the relevant
 ## section(s) in the aggregateFeatures manual page regarding the effects
 ## of missing values on data aggregation.</code></pre>
-<pre class="r"><code>acms</code></pre>
-<pre><code>## An instance of class QFeatures containing 303 assays:
-##  [1] 221019_CM_SUBJECT-03_CMs_Subject3_Lvendo_A13_BA14_1_7445.d: SingleCellExperiment with 6634 rows and 1 columns 
-##  [2] 221019_CM_SUBJECT-03_CMs_Subject3_Lvendo_A14_BA15_1_7446.d: SingleCellExperiment with 4326 rows and 1 columns 
-##  [3] 221019_CM_SUBJECT-03_CMs_Subject3_Lvendo_A15_BA16_1_7447.d: SingleCellExperiment with 6263 rows and 1 columns 
-##  ...
-##  [301] precursors_log: SingleCellExperiment with 12731 rows and 299 columns 
-##  [302] peptides: SingleCellExperiment with 11115 rows and 299 columns 
-##  [303] proteins: SingleCellExperiment with 2479 rows and 299 columns</code></pre>
+<pre class="r"><code>acms[[&quot;peptides&quot;]]</code></pre>
+<pre><code>## class: SingleCellExperiment 
+## dim: 11115 299 
+## metadata(0):
+## assays(2): assay aggcounts
+## rownames(11115): AAAEDVNVTFEDQQK AAAEELLAR ... YYTVFDR YYVTIIDAPGHR
+## rowData names(12): Protein.Group Protein.Ids ... Lib.PG.Q.Value .n
+## colnames(299):
+##   X:\TimsTOF-SCP\Data\CM_PROJECT\221019_CM_SUBJECT-03\CMs_Subject3_Lvendo_A13_BA14_1_7445.d
+##   X:\TimsTOF-SCP\Data\CM_PROJECT\221019_CM_SUBJECT-03\CMs_Subject3_Lvendo_A14_BA15_1_7446.d
+##   ...
+##   X:\TimsTOF-SCP\Data\CM_PROJECT\221024_Subject-04\CMs_Subject4_D_RV_H4_BH7_1_7858.d
+##   X:\TimsTOF-SCP\Data\CM_PROJECT\221024_Subject-04\CMs_Subject4_D_RV_I1_BI11_1_7861.d
+## colData names(0):
+## reducedDimNames(0):
+## mainExpName: NULL
+## altExpNames(0):</code></pre>
 </div>
 <div id="statistical-modelling" class="section level1" number="5">
 <h1><span class="header-section-number">5</span> Statistical modelling</h1>
