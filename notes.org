@@ -40,11 +40,23 @@ Enrico.
 - [ ] Downstream (*Sven*, *Sam*: tscan, and later scverse in Python;
   *Hannah*: clustering)
 
-** Misc todos [1/2]
+** Misc todos [2/5]
 
 - [X] Identify important columns in the DIA-NN report file and those that
   we could drop to improve loading time.
 - [ ] Metadata for the iPSC-induced cardiomyiocyte dataset.
+- [ ] We should have an easy (and efficient) way to update
+  =colnames(qf)= (see [[https://github.com/waldronlab/MultiAssayExperiment/issues/338][#338 Error in `colnames<-,ExperimentList`]]).
+- [ ] We should be able to set the assay rownames when constructing
+  the =QFeatures= object.
+- [X] Create a helper function to set assay rownames. See [[https://github.com/rformassspectrometry/QFeatures/pull/219][#219 fix
+  fnames for readQFeatures()]].
+
+To use this version, re-install =QFeatures= with
+
+#+begin_src R
+BiocManager::install("RforMassSpectrometry/QFeatures", ref = "fix-fname")
+#+end_src
 
 ** Where to find data
 
