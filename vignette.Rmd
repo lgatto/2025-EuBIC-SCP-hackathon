@@ -164,14 +164,23 @@ tab$runCol <- tab$File.Name
 ```
 
 Now we can create the `QFeatures` object, and include the metadata
-that we extracted.
+that we extracted. We also use the `fnames` argument to use percursor
+identifiers (i.e. peptides sequence and precursor charge) as assay
+rownames (this is important to correctly join the assays below).
 
 ```{r readscp, eval = TRUE, cache = TRUE}
 acms <- readSCPfromDIANN(acmsTab,
-                         colData = DataFrame(tab))
+                         colData = DataFrame(tab),
+                         fnames = "Precursor.Id")
 # Setting the names of the QFeatures objects
 names(acms) <- acms$Sample
 acms
+```
+
+Note that the `fnames` requires `QFeatures` version 1.17.2 or later.
+
+```{r checkversion, echo = FALSE}
+stopifnot(packageVersion("QFeatures") >= "1.17.2")
 ```
 
 Replace 0 by `NA` for downstream analysis.
@@ -201,27 +210,10 @@ acms |>
   filterFeatures(~ Protein.Q.Value < 0.05)
 ```
 
-Currently, the row names are arbitrary indices, but we want to rename
-then to the precursor identifications to ease downstream analysis.
-
-```{r setrownames, eval = TRUE}
-## Iterate of a list of assays and replace their rownames.
-expl <- lapply(experiments(acms),
-       function(x) {
-         rownames(x) <- rowData(x)$Precursor.Id
-         return(x)
-       })
-
-## Replace the orginal assays with the row-renamed ones.
-experiments(acms) <- List(expl)
-
-head(rownames(acms[[1]]))
-```
-
 Lastly, before the quality control and exploratory data analysis, we
 can to join all the assays based on the precursors.
 
-```{r joinPrecursors, eval = TRUE}
+```{r joinPrecursors, cache = TRUE}
 (acms <- joinAssays(acms, i = names(acms), name = "precursors"))
 ```
 
@@ -277,7 +269,7 @@ hackathon](https://eubic-ms.org/events/2025-developers-meeting/).
 knitr::include_graphics("figs/IMG_6152.jpg")
 ```
 
-Session information:
+using the follwing software
 
 ```{r si, echo = FALSE}
 sessionInfo()
