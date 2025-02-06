@@ -1,0 +1,125 @@
+For the iCMs data set we will go through similar steps as for the aCMs data to create the QFeatures object.
+
+```{r, eval=FALSE}
+# Reading in necessary libraries
+library("scp")
+library("tidyverse")
+```
+
+Reading in the data.
+
+```{r, eval=FALSE}
+icmsTab <- read_tsv("iCMs.tsv.gz")
+```
+
+Like for the aCMs data, we can create an initial QFeatures object to check how many experiments are in there. However, this is a much larger data set and will therefore take more time to load. We did it and already know that we expect there to be 2184 experiments.
+
+```{r,eval=FALSE}
+# icms <- readSCPfromDIANN(icmsTab)
+```
+
+For this dataset, we also want to extract metadata from the file names. We want to extract:
+
+-   Sample name
+
+-   Date
+
+-   Day
+
+-   Batch
+
+-   Platewell
+
+-   Position
+
+-   Number of cells analysed
+
+```{r,eval=FALSE}
+# Extracting Sample name, Date, Day, Batch, Platewell, Position and number of cells analysed
+tab_icms <- tibble(File.Name = unique(icmsTab[[1]]))|>
+  mutate(Sample = sub(".*\\\\", "",File.Name))|>
+  mutate(Date = sub("^.*?(\\d{6}).*", "\\1", File.Name))|>
+  mutate(Date = ymd(as.integer(Date)))|>
+  mutate(Batch = sub("^.*?(Batch[0-9])_.+$", "\\1", File.Name))|>
+  mutate(PlateWell = sub("^.*?([A-Z][0-9]+)_.+$", "\\1", File.Name))|>
+  mutate(Position = sub("^.*?([A-Z]+[0-9]+)_1_[0-9]+\\.d$", "\\1", File.Name))|>
+  mutate(Day = sub("^.*?(day[0-9]+)_.+$", "\\1", File.Name, ignore.case = T))|>
+  mutate(Day = sub("\\D+", "\\1", Day))|>
+  mutate(Day = as.numeric(Day))|>
+  mutate(Cell_count = sub("^.*?([0-9]+cell).+$", "\\1", File.Name))
+```
+
+Getting an overview of the metadata we collected.
+
+```{r,eval=FALSE}
+table(tab_icms$Date)
+table(tab_icms$Batch)
+table(tab_icms$Day)
+table(tab_icms$Cell_count)
+
+table(tab_icms$Date,tab_icms$Batch)
+table(tab_icms$Day,tab_icms$Date)
+table(tab_icms$Batch,tab_icms$Cell_count)
+```
+
+The output should look like this:
+
+```{r,eval=FALSE}
+> table(tab_icms$Date)
+2023-06-16 2023-06-27 2023-07-11 2023-07-26 2023-08-15 2023-08-21 
+       358        377        367        378        323        381 
+
+> table(tab_icms$Batch)
+Batch1 Batch2 Batch3 Batch4 Batch5 Batch6 
+   377    323    381    367    378    358 
+
+> table(tab_icms$Day)
+ day0 day10  day2 day21  day4 
+  358   755   381   323   367 
+
+> table(tab_icms$Cell)
+10cell  1cell 50cell 
+   287   1611    286 
+```
+
+```{r,eval=FALSE}
+> table(tab_icms$Date,tab_icms$Batch)
+             Batch1 Batch2 Batch3 Batch4 Batch5 Batch6
+  2023-06-16      0      0      0      0      0    358
+  2023-06-27    377      0      0      0      0      0
+  2023-07-11      0      0      0    367      0      0
+  2023-07-26      0      0      0      0    378      0
+  2023-08-15      0    323      0      0      0      0
+  2023-08-21      0      0    381      0      0      0
+  
+> table(tab_icms$Day,tab_icms$Date)
+     2023-06-16 2023-06-27 2023-07-11 2023-07-26 2023-08-15 2023-08-21
+  0         358          0          0          0          0          0
+  2           0          0          0          0          0        381
+  4           0          0        367          0          0          0
+  10          0        377          0        378          0          0
+  21          0          0          0          0        323          0
+  
+> table(tab_icms$Batch,tab_icms$Cell_count)
+         10cell 1cell 50cell
+  Batch1     48   285     44
+  Batch2     48   226     49
+  Batch3     48   283     50
+  Batch4     47   273     47
+  Batch5     48   282     48
+  Batch6     48   262     48
+
+```
+
+Adding the `runCol` column data frame for creating the QFeatures object.
+
+```{r,eval=FALSE}
+tab_icms$runCol <- tab_icms$File.Name
+```
+
+Creating the `QFeatures` object with the extracted metadata.
+
+```{r,eval=FALSE}
+icms <- readSCPfromDIANN(icmsTab,
+                         colData = DataFrame(tab_icms))
+```
