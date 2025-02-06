@@ -15,7 +15,7 @@ author:
   affiliation: statOmics, UGent, Belgium
 - name: Hannah Voß
   affiliation: Immunoproteomics (AG Shevchuck), University Clinic Essen, Germany
-package: QFeatures
+package: scp
 abstract: >
  Application of the `scp` pipeline to the adult cardiomyocytes data
  from Ai /et al./ (2025). This vignette is distributed under a CC BY-SA license.
@@ -59,23 +59,23 @@ Here, we will focus on the analysis of the aCMs data.
 Single cardiomyocytes were isolated from 3 human hearts using
 enzymatic digestion isolation technique.
 
-Cells were isolated from 4 regions of the heart, labelled **LVepi**
-(left ventricle, epi-myocardium), **LVendo** (left ventricle,
-endo-myocardium), **LVmid** (left ventricle, mid-myocardium), and
-**RV** (right ventricle).
+Cells were isolated from 4 regions of the heart:
+- **LVepi**: left ventricle, epi-myocardium
+- **LVendo**: left ventricle, endo-myocardium
+- **LVmid**: left ventricle, mid-myocardium
+- **RV**: right ventricle
 
 Single cell proteomes were analyzed in a label-free approach. MS data
-was acquired in data-independent mode (DIA-MS).
-
-
-Data were analyzed with DIA-NN 1.8.1 and DIA-NN 1.8.2. The DIA-NN
-reports were downloaded from MassIVE (MSV000094438).
+was acquired in data-independent mode (DIA-MS). Data were analyzed
+with DIA-NN 1.8.1 and DIA-NN 1.8.2. The DIA-NN reports were downloaded
+from MassIVE (MSV000094438).
 
 #### Packages
 
 The following packages were used to compile this vignette.
 
-```{r setup, eval = TRUE, message = FALSE, warning = FALSE}
+```{r setup, message = FALSE, warning = FALSE}
+library(QFeatures)
 library(scp)
 library(tidyverse)
 library(patchwork)
@@ -90,33 +90,26 @@ We can now read in the results file from DIA-NN. We use the file
 acmsTab <- read_tsv("./data/aCMs_report.zip")
 ```
 
-We can use the `readSCPfromDIANN` to have an initial look at the data.
+<!-- We can use the `readSCPfromDIANN` to have an initial look at the data. -->
 
-```{r readscp0, eval = FALSE}
-acms <- readSCPfromDIANN(acmsTab)
-acms
-```
+<!-- ```{r readscp0, eval = FALSE} -->
+<!-- acms <- readSCPfromDIANN(acmsTab) -->
+<!-- acms -->
+<!-- ``` -->
 
-Doing this, we already create a `QFeatures` object, but we want
-extract additional metadata from the file names.
-
-We want to extract:
--   File name
--   Sample name
--   Acquisition date
--   Subject number
--   Location in the heart from which each cell was extracted (Lvendo,
-    Lvepi, Lvmid, RV, sytox)
--   Position in the 384 well plate
--   Position (BA18, ...)
-
-We see that `acms` object contains 299 assays (which means that 299
-cells were analysed).
+We need to extract metadata from the file names, in particular:
+- File name
+- Sample name
+- Acquisition date
+- Subject number
+- Location in the heart from which each cell was extracted (see above)
+- Position in the 384 well plate
+- Position (BA18, ...)
 
 Our goal is then to create a data frame with 299 rows, one for each
 cell, with the information defined above as the columns.
 
-```{r metadata, eval = TRUE}
+```{r metadata}
 ## Extracting file name, sample name, date, subject, well position and
 ## position
 tab <- tibble(File.Name = unique(acmsTab[[1]])) |>
@@ -127,6 +120,7 @@ tab <- tibble(File.Name = unique(acmsTab[[1]])) |>
     mutate(PlateWell = sub("^.+_([A-Z][0-9]+)_.+$", "\\1", Sample)) |>
     mutate(PlateRow = gsub("[0-9]*", "", PlateWell)) |>
     mutate(PlateColumn = gsub("[A-Z]*", "", PlateWell)) |>
+    mutate(PlateColumn = factor(PlateColumn, levels = 1:24)) |>
     mutate(Position = sub("^.+_([A-Z]+[0-9]+)_1_[0-9]+\\.d$", "\\1", Sample)) |>
     mutate(FileIndex = sub("^.+_1_([0-9]+)\\.d$", "\\1", Sample)) |>
     mutate(FileIndex = factor(FileIndex, levels = sort(unique(FileIndex))))
@@ -140,30 +134,22 @@ for (i in 1:5) {
 }
 ```
 
+```{r}
+tab
+```
+
 After creating the data frame we can check that the values in the
 different columns.
 
-```{r, eval = TRUE}
-table(tab$Subject)
-table(tab$HeartLocation)
-table(tab$Date)
-```
-
-We can see that there are 21 cells from Subject5, 21 cells that falls
-into the "sytox" category and that 21 cells were analysed on one
-specific date. And running the code below, we can indeed see that all
-samples from Subject5 were analysed on the same date, and that all of
-these cells falls into the "sytox" category of the `HeartLocation`
-column.
-
-```{r, eval = TRUE}
+```{r tabtabs}
 table(tab[, c("Date","Subject")])
 table(tab[, c("HeartLocation","Subject")])
 ```
 
-Sytox is a stain used for assessing cell viability, and we can
-therefore remove these cells before we start doing statistical
-analysis.
+We can see that there are 21 cells from subject 5, annotated as
+"sytox", acquired on one specific date. Sytox is a stain used for
+assessing cell viability. We will therefore remove these cells before
+we start doing statistical analysis.
 
 To create the `QFeatures` object, we need to add a column `runCol` to
 properly associate the `colData` to each sample.
@@ -173,9 +159,10 @@ tab$runCol <- tab$File.Name
 ```
 
 Now we can create the `QFeatures` object, and include the metadata
-that we extracted. We also use the `fnames` argument to use percursor
-identifiers (i.e. peptides sequence and precursor charge) as assay
-rownames (this is important to correctly join the assays below).
+that we extracted. We also use the `fnames` argument^[Note that the
+`fnames` requires `QFeatures` version 1.17.2 or later.] to use
+percursor identifiers (i.e. peptides sequence and precursor charge) as
+assay rownames (this is important to correctly join the assays below).
 
 ```{r readscp, eval = TRUE, cache = TRUE}
 acms <- readSCPfromDIANN(acmsTab,
@@ -186,13 +173,15 @@ names(acms) <- acms$Sample
 acms
 ```
 
-Note that the `fnames` requires `QFeatures` version 1.17.2 or later.
+The `QFeatures` object contains `r length(acms)` assays, on per single
+cell.
+
 
 ```{r checkversion, echo = FALSE}
 stopifnot(packageVersion("QFeatures") >= "1.17.2")
 ```
 
-Replace 0 by `NA` for downstream analysis.
+We immediately replace 0 by `NA` for downstream analysis.
 
 ```{r naIsZero, eval = TRUE, cache = TRUE}
 acms <- zeroIsNA(acms, names(acms))
@@ -223,12 +212,14 @@ separately, stratified by subject, a potential variable for batch
 effects. We sort the cells according to the sequence of MS acquisition
 (available in the `FileIndex` column).
 
-```{r, fig.width = 10, fig.height = 4}
+```{r, fig.height = 10, fig.wide = TRUE}
 ggplot(lf) +
-    aes(y = log10(PEP),
-        x = FileIndex,
+    aes(x = log10(PEP),
+        y = FileIndex,
         colour = Subject) +
-    geom_boxplot()
+    geom_boxplot() +
+    theme(axis.text.y = element_blank(),
+          axis.ticks.y = element_blank())
 ```
 
 The plot indicates that the identification errors of every precursor
@@ -241,14 +232,16 @@ differences may indicate wrong identification or issues during liquid
 chromatography. We hence plot the absolute difference between observed
 RT.
 
-```{r, fig.width = 8, fig.height = 3}
+```{r, fig.height = 10, fig.wide = TRUE}
 ggplot(lf,
-       aes(y = abs(RT - Predicted.RT),
-           x = FileIndex,
+       aes(x = abs(RT - Predicted.RT),
+           y = FileIndex,
            colour = Subject)) +
     geom_boxplot() +
     geom_hline(yintercept = 0.18, linetype = "dashed") +
-    scale_y_log10()
+    scale_x_log10() +
+    theme(axis.text.y = element_blank(),
+          axis.ticks.y = element_blank())
 ```
 
 Again, the plot shows stable metrics across cells, with a few outliers
@@ -287,7 +280,7 @@ Finally, we add the information whether a precursor belongs to a
 contaminant protein or not. We retrieve this information using the
 cRAP database, through the `camprotR` package.
 
-```{r crap}
+```{r crap, warning = FALSE}
 head(contaminants <- camprotR::get_ccp_crap())
 ```
 
@@ -356,7 +349,7 @@ data cleaning for improved visualisation.
 We will first explore how the data acquisition strategy, by plotting
 the order of the the MS runs on the plate layout.
 
-```{r, fig.width=9, fig.height=3}
+```{r, fig.width=10, fig.wide = TRUE}
 data.frame(colData(acms)) |>
     ggplot(aes(y = PlateRow,
                x = PlateColumn,
@@ -374,11 +367,11 @@ suggested by the date annotation), in order of the rows. Next, we now
 plot the plate layout with respect to the heart location of the cells,
 for each data/subject separately.
 
-```{r, fig.width=9, fig.height=3}
+```{r, fig.width=10, fig.wide = TRUE}
 data.frame(colData(acms)) |>
-ggplot(aes(y = PlateRow,
-           x = PlateColumn,
-           fill = HeartLocation)) +
+    ggplot(aes(y = PlateRow,
+               x = PlateColumn,
+               fill = HeartLocation)) +
     geom_tile() +
     facet_grid(~ Date) +
     theme_minimal() +
@@ -399,11 +392,11 @@ ignore cell column effects.
 We plot the same layout, this time colouring by the number of
 precursors identified.
 
-```{r, fig.width=9, fig.height=3}
+```{r, fig.width=10, fig.wide = TRUE}
 data.frame(colData(acms)) |>
-ggplot(aes(y = PlateRow,
-           x = PlateColumn,
-           fill = TotalIds)) +
+    ggplot(aes(y = PlateRow,
+               x = PlateColumn,
+               fill = TotalIds)) +
     geom_tile() +
     facet_grid(~ Date) +
     scale_fill_continuous(type = "viridis") +
@@ -417,7 +410,7 @@ precursors than the other columns, potentially indicating some batch
 effect during cell sorting. A cell type effect may also be an
 explanation, but we do not see the effect in the last plate.
 
-```{r, fig.width=9, fig.height=3}
+```{r, fig.width=10, fig.wide = TRUE}
 data.frame(colData(acms)) |>
     ggplot(aes(y = PlateRow,
                x = PlateColumn,
@@ -433,7 +426,7 @@ data.frame(colData(acms)) |>
 Interestingly, this plot shows that columns 1-9 in the first plate
 have lower median intensity. We now combine the information
 
-```{r}
+```{r, fig.wide = TRUE}
 data.frame(colData(acms)) |>
 ggplot(aes(y = MedianIntensity,
            x = TotalIds,
@@ -475,7 +468,6 @@ acms <- aggregateFeatures(acms,
                           fcol = "Modified.Sequence",
                           fun = colMedians,
                           na.rm = TRUE)
-acms[["peptides"]]
 ```
 
 
@@ -486,7 +478,12 @@ acms <- aggregateFeatures(acms,
                           fcol = "Protein.Ids",
                           fun = colMedians,
                           na.rm = TRUE)
-acms[["peptides"]]
+```
+
+We now have two additional assays names `peptides` and `proteins`:
+
+```{r}
+acms
 ```
 
 # Statistical modelling
@@ -535,24 +532,24 @@ Here, we define the missing data filtering threshold: we want at least
 ```{r filterthreshold}
 scpModelFilterThreshold(sce) <- 3
 scpModelFilterPlot(sce)
-scpModelFilterPlot(sce)
 ```
 
 ## Analysis of variance
 
 ```{r vaRes, cache = TRUE}
 (vaRes <- scpVarianceAnalysis(sce))
-```
 
-```{r vaPlot, cache = TRUE}
 ## Add annotations from the rowData()
 vaRes <- scpAnnotateResults(
     vaRes, rowData(sce), by = "feature", by2 = "Precursor.Id"
 )
+```
 
+```{r vaPlot1}
 scpVariancePlot(vaRes)
+```
 
-## Two figures on one plot
+```{r vaPlot2, fig.height = 10, fig.wide = TRUE}
 scpVariancePlot(
     vaRes, top = 20, by = "percentExplainedVar", effect = "Subject",
     decreasing = TRUE, combined = FALSE, fcol = "Protein.Names"
@@ -597,7 +594,7 @@ scpVolcanoPlot(daRes,
      sce, ncomp = 15, method = "APCA"))
 ```
 
-```{r caPlot}
+```{r caPlot, fig.wide = TRUE}
 caResCells <- caRes$bySample
 sce$cell <- colnames(sce)
 caResCells <- scpAnnotateResults(caResCells,
@@ -613,7 +610,7 @@ scpComponentPlot(
     plot_layout(guides = "collect")
 ```
 
-```{r tsne}
+```{r tsne, fig.wide = TRUE}
 library(scater)
 
 sce <-addReducedDims(sce, caRes$bySample)
@@ -635,8 +632,9 @@ scebr <- scpRemoveBatchEffect(
   intercept = TRUE)
 ```
 
-
 # Downstream analyses
+
+Coming soon.
 
 # Session information
 
