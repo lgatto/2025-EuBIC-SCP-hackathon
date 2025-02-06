@@ -5,6 +5,7 @@ Enrico.
 
 * Setting the stage [2025-02-03 Mon]
 
+** Introductions
 - Learn about SCP in general, SCP data analysis
 - Understand SCP data structures
 - Documentation
@@ -25,20 +26,19 @@ Enrico.
 4. [X] Create a QFeatures object.
 5. [X] Process data.
 6. [X] Model SCP data with scplainer.
-7. [ ] /In progress/ Apply trajectory analysis.
+7. [ ] /In progress/ Apply downstream analyses (trajectory analysis).
 8. [ ] /In progress/ Write a vignette.
 9. [ ] Add two new data to =scpdata= and =MsDataHub= (adult and
    induced cariomtocytes)
 
 ** Vignette working groups [2/5] [2025-02-05 Wed] [2025-02-06 Thu]
 
-- [X] Intro, mat and meth (*Enrico*)
+- [ ] Intro, mat and meth (*Enrico*)
 - [X] Prepare QFeatures, metadata (*Louise*)
 - [ ] EDA, QC and Processing (*Hannah*, *Chris*)
 - [ ] Statistical modelling (*Chris*)
 - [ ] Downstream (*Sven*, *Sam*: tscan, and later scverse in Python;
   *Hannah*: clustering)
-
 
 ** Misc todos [1/2]
 

@@ -6,7 +6,6 @@ author:
 - name: Laurent Gatto
 - name: Enrico Massignani
 - name: Sam van Puyenbroeck
-- name: Uladzislau Vadadokhau
 - name: Christophe Vanderaa
 - name: Hannah Voß
 package: QFeatures
