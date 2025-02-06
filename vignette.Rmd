@@ -2,12 +2,19 @@
 title: "Application of the scp pipeline on adult cardiomyocytes data"
 author:
 - name: Sven Berres
+  affiliation: Medical Bioinfomratics, University Bochum, Germany
 - name: Louise Buur
+  affiliation: Bioinformatics Research Group, University of Applied Sciences Upper Austria, Austria
 - name: Laurent Gatto
+  affiliation: de Duve Institute, UCLouvain, Belgium
 - name: Enrico Massignani
+  affiliation: CompOmics, UGent, Belgium
 - name: Sam van Puyenbroeck
+  affiliation: CompOmics, UGent, Belgium
 - name: Christophe Vanderaa
+  affiliation: statOmics, UGent, Belgium
 - name: Hannah Voß
+  affiliation: Immunoproteomics (AG Shevchuck), University Clinic Essen, Germany
 package: QFeatures
 abstract: >
  Application of the `scp` pipeline on adult cardiomyocytes data
@@ -84,7 +91,7 @@ acmsTab <- read_tsv("./data/aCMs_report.zip")
 
 We can use the `readSCPfromDIANN` to have an initial look at the data.
 
-```{r, eval = FALSE}
+```{r readscp0, eval = FALSE}
 acms <- readSCPfromDIANN(acmsTab)
 acms
 ```
@@ -108,7 +115,7 @@ cells were analysed).
 Our goal is then to create a data frame with 299 rows, one for each
 cell, with the information defined above as the columns.
 
-```{r, eval = TRUE}
+```{r metadata, eval = TRUE}
 ## Extracting file name, sample name, date, subject, well position and
 ## position
 tab <- tibble(File.Name = unique(acmsTab[[1]])) |>
@@ -185,7 +192,7 @@ stopifnot(packageVersion("QFeatures") >= "1.17.2")
 
 Replace 0 by `NA` for downstream analysis.
 
-```{r naIsZero, eval = TRUE}
+```{r naIsZero, eval = TRUE, cache = TRUE}
 acms <- zeroIsNA(acms, names(acms))
 ```
 
