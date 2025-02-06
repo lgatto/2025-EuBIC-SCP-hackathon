@@ -558,6 +558,15 @@ saveRDS(scebr, file = "scebr.rds")
 #+end_src
 
 ** Downstream
-* Q&A and hackathon feedback [2025-02-06 Thu]
+* Hackathon feedback [2025-02-06 Thu]
+- Contained subject, manageable in 1 week.
+- Start was a mix between workshop and hackathon, but helpful to learn
+  and non-coders.
+- Accessible for different levels and backgrounds.
 
--
+* Q&A
+- Where to start to write a R package.
+- Discussion on reproducible research, and the stuggle to reproduce
+  code or use software from papers.
+- Discussion about reviews.
+- How to improve ones coding.
