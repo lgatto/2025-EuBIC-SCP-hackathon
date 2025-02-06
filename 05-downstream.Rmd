@@ -2,29 +2,56 @@
 ##TSCAN
 In an attempt to apply TSCAN (Developed for single cell transcriptomics data) to our single cell proteomics data
 we first load our single cell experiment from github.
-```{r}
+```{r warning = FALSE, message = FALSE}
+library(curl)
 url <- "https://raw.githubusercontent.com/lgatto/2025-EuBIC-SCP-hackathon/main/data/sce.rds"
-destfile <- tempfile(fileext = ".rds")  # Temporary file to store the download
-
-# Download the file
-download.file(url, destfile, mode = "wb")
-
+destfile <- "sce.rds"
+curl_download(url, destfile)
 # Read the RDS file
 sce <- readRDS(destfile)
 ```
 Extract the PCA data, focus on the first 5 principle components and clean up our cell names
-```{r}
+```{r warning = FALSE, message = FALSE}
+library(scp)
+library(SingleCellExperiment)
 df=t(reducedDims(sce)[[7]])
 df=df[1:5,]
 colnames(df) <- as.character(sapply(colnames(df), function(x) tail(strsplit(x, "\\\\")[[1]], 1)))
 ```
 
 Start TSCAN. Note we input dimention reduced data already and let TCAN select the number of clusters.
-```{r}
+```{r warning = FALSE, message = FALSE}
 library("TSCAN")
 lpsmclust <- exprmclust(df,reduce=FALSE,clusternum=c(5:10))
 plotmclust(lpsmclust,show_cell_names = FALSE)
 
 ```
 
-Next we infere and plot a pseudotime based trajectory. (toDo)
+Next we infere pseudotime and plot a trajectory line with a custom made ggplot call. 
+
+```{r warning = FALSE, message = FALSE}
+lpsorder <- TSCANorder(lpsmclust)
+
+df2=data.frame(cell=names(lpsmclust$clusterid),
+PC1=lpsmclust$pcareduceres[,"PC1"],
+PC2=lpsmclust$pcareduceres[,"PC2"],
+clusterid=lpsmclust$clusterid)
+df2$Pseudotime <- lpsorder[rownames(df2), "Pseudotime"]
+
+library(ggplot2)
+library(dplyr)
+```
+
+```{r warning = FALSE, message = FALSE}
+# Scatter plot of cells based on PC1 and PC2, color by Pseudotime
+ggplot(df2, aes(x = PC1, y = PC2, color = Pseudotime)) +
+  geom_point(size = 3, alpha = 0.8) +  # Scatter points
+  # Loess smoothing only for cells with non-missing Pseudotime
+  geom_smooth(data = df2 %>% filter(!is.na(Pseudotime)), 
+              aes(group = 1), method = "loess", se = FALSE, color = "black") +
+  scale_color_gradient(low = "blue", high = "red") +  # Color gradient for pseudotime
+  labs(title = "PCA Plot with Pseudotime Path",
+       x = "PC1", y = "PC2", color = "Pseudotime") +
+  theme_minimal()
+```
+Pseudotime runs from blue to red. Note that TSAN did not provide pseudotime values for the grey cells. 
