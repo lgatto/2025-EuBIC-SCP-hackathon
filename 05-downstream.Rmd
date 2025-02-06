@@ -1,23 +1,30 @@
+#Pseudotime
 ##TSCAN
-#test without reducedDims 
+In an attempt to apply TSCAN (Developed for single cell transcriptomics data) to our single cell proteomics data
+we first load our single cell experiment from github.
+```{r}
+url <- "https://raw.githubusercontent.com/lgatto/2025-EuBIC-SCP-hackathon/main/data/sce.rds"
+destfile <- tempfile(fileext = ".rds")  # Temporary file to store the download
 
+# Download the file
+download.file(url, destfile, mode = "wb")
 
-sce=readRDS("./out/sce_batch_removed.rds")
-df=assay(sce)
-colnames(df) <- as.character(sapply(colnames(df), function(x) tail(strsplit(x, "\\\\")[[1]], 1)))
-
-
-
-library("TSCAN")
-
-#error here
-lpsmclust <- exprmclust(df,reduce=FALSE)
-
-##test with reducedDims still in file
-
-sce=readRDS("./out/sce.rds")
-caRes=readRDS("./out/caRes.rds")
-
-
+# Read the RDS file
+sce <- readRDS(destfile)
+```
+Extract the PCA data, focus on the first 5 principle components and clean up our cell names
+```{r}
 df=t(reducedDims(sce)[[7]])
+df=df[1:5,]
 colnames(df) <- as.character(sapply(colnames(df), function(x) tail(strsplit(x, "\\\\")[[1]], 1)))
+```
+
+Start TSCAN. Note we input dimention reduced data already and let TCAN select the number of clusters.
+```{r}
+library("TSCAN")
+lpsmclust <- exprmclust(df,reduce=FALSE,clusternum=c(5:10))
+plotmclust(lpsmclust,show_cell_names = FALSE)
+
+```
+
+Next we infere and plot a pseudotime based trajectory. (toDo)
