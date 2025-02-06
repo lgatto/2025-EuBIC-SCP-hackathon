@@ -19,7 +19,7 @@ output:
     toc_depth: 2
     code_folding: show
 date: "`r BiocStyle::doc_date()`"
-bibliography: scp.bib
+bibliography: ai2025.bib
 vignette: >
   %\VignetteIndexEntry{Application of the scp pipeline on adult cardiomyocytes data}
   %\VignetteEngine{knitr::rmarkdown}
@@ -32,18 +32,247 @@ BiocStyle::markdown()
 
 # Introduction
 
+In this vignette, we will reanalyse single-cell proteomics data from
+[@Ai2025].
+
+## Motivation of the original paper
+
+iPSC-derived cardiomyocytes (iCMs) have been proposed as a model to
+study cardiovascular diseases. However, this requires that iCMs
+display the same biological features as adult cardiomyocytes
+(aCMs). The authors of the manuscript used MS-based single-cell
+proteomics to analyze metabolic changes in iPSCs during
+differentiation process and to compare the resulting iCMs to
+freshly-isolated aCMs.
+
+Here, we will focus on the analysis of the aCMs data.
+
+## Data origin
+
+Single cardiomyocytes were isolated from 3 human hearts using
+enzymatic digestion isolation technique.
+
+Cells were isolated from 4 regions of the heart, labelled **LVepi**
+(left ventricle, epi-myocardium), **LVendo** (left ventricle,
+endo-myocardium), **LVmid** (left ventricle, mid-myocardium), and
+**RV** (right ventricle).
+
+Single cell proteomes were analyzed in a label-free approach. MS data
+was acquired in data-independent mode (DIA-MS).
+
+
+Data were analyzed with DIA-NN 1.8.1 and DIA-NN 1.8.2. The DIA-NN
+reports were downloaded from MassIVE (MSV000094438).
+
+#### Packages
+
+The following packages were used to compile this vignette.
+
+```{r setup, eval = TRUE, message = FALSE, warning = FALSE}
+library(scp) # core package
+library(tidyverse) # utility package
+```
+
 # Data prepartion and processing
+
+We can now read in the results file from DIA-NN. We use the file
+`report.tsv` file generate by DIA-NN (renamed `aCMs_report.zip` below).
+
+```{r readreport, eval = TRUE, cache = TRUE, message = FALSE}
+acmsTab <- read_tsv("./data/aCMs_report.zip")
+```
+
+We can use the `readSCPfromDIANN` to have an initial look at the data.
+
+```{r, eval = FALSE}
+acms <- readSCPfromDIANN(acmsTab)
+acms
+```
+
+Doing this, we already create a `QFeatures` object, but we want
+extract additional metadata from the file names.
+
+We want to extract:
+-   File name
+-   Sample name
+-   Acquisition date
+-   Subject number
+-   Location in the heart from which each cell was extracted (Lvendo,
+    Lvepi, Lvmid, RV, sytox)
+-   Position in the 384 well plate
+-   Position (BA18, ...)
+
+We see that `acms` object contains 299 assays (which means that 299
+cells were analysed).
+
+Our goal is then to create a data frame with 299 rows, one for each
+cell, with the information defined above as the columns.
+
+```{r, eval = TRUE}
+# Extracting file name, sample name, date, subject, well position and position
+tab <- tibble(File.Name = unique(acmsTab[[1]])) |>
+  mutate(Sample = sub("^.+CM_PROJECT\\\\", "", File.Name)) |>
+  mutate(Sample = sub("\\\\", "_", Sample)) |>
+  mutate(Date = ymd(as.integer(substring(Sample, 1, 6)))) |>
+  mutate(Subject = sub("^.+_(Subject[0-9])_.+$", "\\1", Sample)) |>
+  mutate(PlateWell = sub("^.+_([A-Z][0-9]+)_.+$", "\\1", Sample)) |>
+  mutate(Position = sub("^.+_([A-Z]+[0-9]+)_1_[0-9]+\\.d$", "\\1", Sample))
+
+# Getting the plate letters
+tab$PlateLetter <- substring(tab$PlateWell, 1, 1)
+
+# Extracting the heart locations
+tab$HeartLocation <- NA
+ExpectedLocations <- c("Lvendo", "Lvepi", "Lvmid", "RV", "sytox")
+for (i in 1:5) {
+  loc <- ExpectedLocations[i]
+  tab$HeartLocation[grep(loc, tab$File.Name, ignore.case = TRUE)] <- loc
+}
+```
+
+After creating the data frame we can check that the values in the
+different columns.
+
+```{r, eval = TRUE}
+table(tab$Subject)
+table(tab$HeartLocation)
+table(tab$Date)
+```
+
+We can see that there are 21 cells from Subject5, 21 cells that falls
+into the "sytox" category and that 21 cells were analysed on one
+specific date. And running the code below, we can indeed see that all
+samples from Subject5 were analysed on the same date, and that all of
+these cells falls into the "sytox" category of the `HeartLocation`
+column.
+
+```{r, eval = TRUE}
+table(tab[, c("Date","Subject")])
+table(tab[, c("HeartLocation","Subject")])
+```
+
+Sytox is a stain used for assessing cell viability, and we can
+therefore remove these cells before we start doing statistical
+analysis.
+
+To create the `QFeatures` object, we need to add a column `runCol` to
+properly associate the `colData` to each sample.
+
+```{r, eval = TRUE}
+tab$runCol <- tab$File.Name
+```
+
+Now we can create the `QFeatures` object, and include the metadata
+that we extracted.
+
+```{r readscp, eval = TRUE, cache = TRUE}
+acms <- readSCPfromDIANN(acmsTab,
+                         colData = DataFrame(tab))
+# Setting the names of the QFeatures objects
+names(acms) <- acms$Sample
+```
+
+Replace 0 by `NA` for downstream analysis.
+
+```{r naIsZero, eval = TRUE}
+acms <- zeroIsNA(acms, names(acms))
+```
+
+Like the authors of the paper, we will remove all the precursors that
+have been mapped to protein groups. Having peptides that map to more
+than one protein will make quantitative analysis more complicated.
+
+```{r rmpg, eval = FALSE}
+## ";" in the protein name indicate that the identified peptide maps
+## to more than one protein
+acms <- filterFeatures(acms, ~ !grepl(";", Protein.Names))
+```
+
+If you wish, you can also do further filtering of the data, for
+instance the posterior error probability (PEP) or the protein
+Q-values.
+
+```{r morefiltering, eval = FALSE}
+acms |>
+  filterFeatures(~ !grepl(";", Protein.Names)) |>
+  filterFeatures(~ PEP < 0.01) |>
+  filterFeatures(~ Protein.Q.Value < 0.05)
+```
+
+Currently, the row names are arbitrary indices, but we want to rename
+then to the precursor identifications to ease downstream analysis.
+
+```{r setrownames, eval = FALSE}
+## Iterate of a list of assays and replace their rownames.
+expl <- lapply(experiments(acms),
+       function(x) {
+         rownames(x) <- rowData(x)$Precursor.Id
+         return(x)
+       })
+
+## Replace the orginal assays with the row-renamed ones.
+experiments(acms) <- List(expl)
+```
+
+Lastly, before the quality control and exploratory data analysis, we
+can to join all the assays based on the precursors.
+
+```{r joinPrecursors, eval = TRUE, cache = TRUE}
+(acms <- joinAssays(acms, i = names(acms), name = "precursors"))
+```
+
 
 # Exploratory data analysis and quality control
 
+# Data processing
+
+We start by log-transforming our data for downstream statistical
+analyses. The `logTransfrorm()` function will create a new assay,
+named `precursors_log`.
+
+```{r logtrans}
+(acms <- logTransform(acms, "precursors", "precursors_log"))
+```
+
+While we will be performing our analyses with precursor data, below we
+show how to aggregate these data into peptide and protein data.
+
+```{r aggregation}
+acms <- aggregateFeatures(acms,
+                          i = "precursors_log",
+                          name = "peptides",
+                          fcol = "Modified.Sequence",
+                          fun = colMedians,
+                          na.rm = TRUE)
+
+acms <- aggregateFeatures(acms,
+                          i = "peptides",
+                          name = "proteins",
+                          fcol = "Protein.Ids",
+                          fun = colMedians,
+                          na.rm = TRUE)
+acms
+```
 # Statistical modelling
+
+We will model the data following the *scplainer* pipeline
+[@Vanderaa2023-scplainer].
 
 # Downstream analyses
 
-# References {-}
-
 # Session information
 
-```{r si}
+This vignette pas prepared as part of the [EuBIC 2025 developer
+hackathon](https://eubic-ms.org/events/2025-developers-meeting/).
+
+```{r hackathon, echo = FALSE, caption = "Hackathon participants, from left to right: Sven Berres, Hannah Voß, Louise Buur, Sam van Puyenbroeck, Christophe Vanderaa, Laurent Gatto and Enrico Massignani"}
+knitr::include_graphics("figs/IMG_6152.jpg")
+```
+
+Session information:
+
+```{r si, echo = FALSE}
 sessionInfo()
 ```
+
+# References {-}

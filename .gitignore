@@ -7,3 +7,4 @@ data/acms.rds
 .DS_Store
 data/aCMs_report.zip
 data/iCMs_report.zip
+vignette_cache
