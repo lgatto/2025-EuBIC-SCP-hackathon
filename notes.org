@@ -17,42 +17,34 @@ Enrico.
 - New visualisations
 - Write paper! Or vignette.
 
-** Hackathon plan  [5/9]
+** Hackathon plan  [6/9]
 
 1. [X] Find a paper/dataset.
 2. [X] Get the data.
 3. [X] Get the metadata.
 4. [X] Create a QFeatures object.
 5. [X] Process data.
-6. [ ] Model SCP data with scplainer.
-7. [ ] Apply trajectory analysis.
-8. [ ] Write a vignette.
-9. [ ] Add the new data to =scpdata=.
+6. [X] Model SCP data with scplainer.
+7. [ ] /In progress/ Apply trajectory analysis.
+8. [ ] /In progress/ Write a vignette.
+9. [ ] Add two new data to =scpdata= and =MsDataHub= (adult and
+   induced cariomtocytes)
 
-** Working groups
+** Vignette working groups [2/5] [2025-02-05 Wed] [2025-02-06 Thu]
 
-*** Intro, mat and meth
-- Enrico
+- [X] Intro, mat and meth (*Enrico*)
+- [X] Prepare QFeatures, metadata (*Louise*)
+- [ ] EDA, QC and Processing (*Hannah*, *Chris*)
+- [ ] Statistical modelling (*Chris*)
+- [ ] Downstream (*Sven*, *Sam*: tscan, and later scverse in Python;
+  *Hannah*: clustering)
 
-*** Prepare QFeatures, metadata
-- Louise
 
-*** EDA, QC and Processing
-- Hannah, Chris
+** Misc todos [1/2]
 
-*** Statistical modelling
-- Chris
-
-*** Downstream
-- Sven, Sam: tscan, and later scverse in Python
-- Hannah: clustering
-
-** Misc todos
-
-- [ ] Identify important columns in the DIA-NN report file and those that
+- [X] Identify important columns in the DIA-NN report file and those that
   we could drop to improve loading time.
-- [ ] What precursor filtering do we want/need? What columns are
-  needed?
+- [ ] Metadata for the iPSC-induced cardiomyiocyte dataset.
 
 ** Where to find data
 

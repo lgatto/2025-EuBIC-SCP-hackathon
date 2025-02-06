@@ -42,3 +42,9 @@ BiocStyle::markdown()
 # Downstream analyses
 
 # References {-}
+
+# Session information
+
+```{r si}
+sessionInfo()
+```
