@@ -5,3 +5,5 @@ iCMs.tsv.gz
 data/scebr.rds
 data/acms.rds
 .DS_Store
+data/aCMs_report.zip
+data/iCMs_report.zip

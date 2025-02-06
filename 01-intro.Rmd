@@ -1,0 +1,33 @@
+## Introduction
+In this vignette, we will reanalyse single-cell proteomics data from Ai *et al.* (2025)
+
+* Ai, L., Binek, A., Zhemkov, V., Cho, J. H., Haghani, A., Kreimer, S., Israely, E., Arzt, M., Chazarin, B., Sundararaman, N., Sharma, A., Marbán, E., Svendsen, C. N., & Van Eyk, J. E. (2025). Single Cell Proteomics Reveals Specific Cellular Subtypes in Cardiomyocytes Derived from Human iPSCs and Adult Hearts. Molecular & Cellular Proteomics, 100910. https://doi.org/10.1016/j.mcpro.2025.100910
+
+
+#### Motivation of the original paper
+iPSC-derived cardiomyocytes (iCMs) have been proposed as a model to study cardiovascular diseases. However, this requires that iCMs display the same biological features as adult cardiomyocytes (aCMs). The authors of the manuscript used MS-based single-cell proteomics to analyze metabolic changes in iPSCs during differentiation process and to compare the resulting iCMs to freshly-isolated aCMs.
+
+Here, we will focus on the analysis of the aCMs data. 
+
+
+#### Data origin 
+Single cardiomyocytes were isolated from 3 human hearts using enzymatic digestion isolation technique.
+
+Cells were isolated from 4 regions of the heart, labelled **LVepi** (left ventricle, epi-myocardium), **LVendo** (left ventricle, endo-myocardium), **LVmid** (left ventricle, mid-myocardium), and **RV** (right ventricle).
+
+Single cell proteomes were analyzed in a label-free approach. MS data was acquired in data-independent mode (DIA-MS).
+
+Data were analyzed with DIA-NN 1.8.1 and DIA-NN 1.8.2.
+
+#### Libraries
+The following libraries were used to compile this vignette.
+```{r,eval=FALSE}
+library(scp) # core package
+library(tidyverse) # utility package
+```
+
+```{r}
+sessionInfo()
+```
+
+
