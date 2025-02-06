@@ -558,10 +558,11 @@ saveRDS(scebr, file = "scebr.rds")
 #+end_src
 
 ** Downstream
+
 * Hackathon feedback [2025-02-06 Thu]
 - Contained subject, manageable in 1 week.
-- Start was a mix between workshop and hackathon, but helpful to learn
-  and non-coders.
+- Start was a mix between workshop and hackathon, helpful to learn and
+  non-coders.
 - Accessible for different levels and backgrounds.
 
 * Q&A
