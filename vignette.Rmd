@@ -109,7 +109,8 @@ Our goal is then to create a data frame with 299 rows, one for each
 cell, with the information defined above as the columns.
 
 ```{r, eval = TRUE}
-# Extracting file name, sample name, date, subject, well position and position
+## Extracting file name, sample name, date, subject, well position and
+## position
 tab <- tibble(File.Name = unique(acmsTab[[1]])) |>
   mutate(Sample = sub("^.+CM_PROJECT\\\\", "", File.Name)) |>
   mutate(Sample = sub("\\\\", "_", Sample)) |>
@@ -118,10 +119,10 @@ tab <- tibble(File.Name = unique(acmsTab[[1]])) |>
   mutate(PlateWell = sub("^.+_([A-Z][0-9]+)_.+$", "\\1", Sample)) |>
   mutate(Position = sub("^.+_([A-Z]+[0-9]+)_1_[0-9]+\\.d$", "\\1", Sample))
 
-# Getting the plate letters
+## Getting the plate letters
 tab$PlateLetter <- substring(tab$PlateWell, 1, 1)
 
-# Extracting the heart locations
+## Extracting the heart locations
 tab$HeartLocation <- NA
 ExpectedLocations <- c("Lvendo", "Lvepi", "Lvmid", "RV", "sytox")
 for (i in 1:5) {
@@ -170,6 +171,7 @@ acms <- readSCPfromDIANN(acmsTab,
                          colData = DataFrame(tab))
 # Setting the names of the QFeatures objects
 names(acms) <- acms$Sample
+acms
 ```
 
 Replace 0 by `NA` for downstream analysis.
@@ -185,7 +187,7 @@ than one protein will make quantitative analysis more complicated.
 ```{r rmpg, eval = FALSE}
 ## ";" in the protein name indicate that the identified peptide maps
 ## to more than one protein
-acms <- filterFeatures(acms, ~ !grepl(";", Protein.Names))
+(acms <- filterFeatures(acms, ~ !grepl(";", Protein.Names)))
 ```
 
 If you wish, you can also do further filtering of the data, for
@@ -217,10 +219,9 @@ experiments(acms) <- List(expl)
 Lastly, before the quality control and exploratory data analysis, we
 can to join all the assays based on the precursors.
 
-```{r joinPrecursors, eval = TRUE, cache = TRUE}
+```{r joinPrecursors, eval = FALSE}
 (acms <- joinAssays(acms, i = names(acms), name = "precursors"))
 ```
-
 
 # Exploratory data analysis and quality control
 
@@ -230,14 +231,14 @@ We start by log-transforming our data for downstream statistical
 analyses. The `logTransfrorm()` function will create a new assay,
 named `precursors_log`.
 
-```{r logtrans}
+```{r logtrans, eval = FALSE}
 (acms <- logTransform(acms, "precursors", "precursors_log"))
 ```
 
 While we will be performing our analyses with precursor data, below we
 show how to aggregate these data into peptide and protein data.
 
-```{r aggregation}
+```{r aggregation, eval = FALSE}
 acms <- aggregateFeatures(acms,
                           i = "precursors_log",
                           name = "peptides",
