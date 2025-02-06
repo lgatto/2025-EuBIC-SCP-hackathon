@@ -31,24 +31,22 @@ Enrico.
 9. [ ] Add two new data to =scpdata= and =MsDataHub= (adult and
    induced cariomtocytes)
 
-** Vignette working groups [2/5] [2025-02-05 Wed] [2025-02-06 Thu]
+** Vignette working groups [3/5] [2025-02-05 Wed] [2025-02-06 Thu]
 
-- [ ] Intro, mat and meth (*Enrico*)
+- [X] Intro, mat and meth (*Enrico*)
 - [X] Prepare QFeatures, metadata (*Louise*)
 - [ ] EDA, QC and Processing (*Hannah*, *Chris*)
-- [ ] Statistical modelling (*Chris*)
+- [X] Statistical modelling (*Laurent*)
 - [ ] Downstream (*Sven*, *Sam*: tscan, and later scverse in Python;
   *Hannah*: clustering)
 
-** Misc todos [2/5]
+** Misc todos [3/5]
 
 - [X] Identify important columns in the DIA-NN report file and those that
   we could drop to improve loading time.
-- [ ] Metadata for the iPSC-induced cardiomyiocyte dataset.
+- [X] Metadata for the iPSC-induced cardiomyiocyte dataset.
 - [ ] We should have an easy (and efficient) way to update
   =colnames(qf)= (see [[https://github.com/waldronlab/MultiAssayExperiment/issues/338][#338 Error in `colnames<-,ExperimentList`]]).
-- [ ] We should be able to set the assay rownames when constructing
-  the =QFeatures= object.
 - [X] Create a helper function to set assay rownames. See [[https://github.com/rformassspectrometry/QFeatures/pull/219][#219 fix
   fnames for readQFeatures()]].
 
@@ -560,3 +558,6 @@ saveRDS(scebr, file = "scebr.rds")
 #+end_src
 
 ** Downstream
+* Q&A and hackathon feedback [2025-02-06 Thu]
+
+-

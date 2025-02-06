@@ -1,5 +1,5 @@
 ---
-title: "Application of the scp pipeline on adult cardiomyocytes data"
+title: "Application of the scp pipeline to adult cardiomyocytes data"
 author:
 - name: Sven Berres
   affiliation: Medical Bioinfomratics, University Bochum, Germany
@@ -17,8 +17,8 @@ author:
   affiliation: Immunoproteomics (AG Shevchuck), University Clinic Essen, Germany
 package: QFeatures
 abstract: >
- Application of the `scp` pipeline on adult cardiomyocytes data
- from Ai et al. 2025. This vignette is distributed under a CC BY-SA license.
+ Application of the `scp` pipeline to the adult cardiomyocytes data
+ from Ai /et al./ (2025). This vignette is distributed under a CC BY-SA license.
 output:
   BiocStyle::html_document:
     toc: true
@@ -76,8 +76,9 @@ reports were downloaded from MassIVE (MSV000094438).
 The following packages were used to compile this vignette.
 
 ```{r setup, eval = TRUE, message = FALSE, warning = FALSE}
-library(scp) # core package
-library(tidyverse) # utility package
+library(scp)
+library(tidyverse)
+library(patchwork)
 ```
 
 # Data prepartion and processing
@@ -224,7 +225,78 @@ can to join all the assays based on the precursors.
 (acms <- joinAssays(acms, i = names(acms), name = "precursors"))
 ```
 
-# Exploratory data analysis and quality control
+# Exploratory data analysis
+
+# Quality control
+
+Use the `precursors` assay, created above.
+
+- Compute the median intensity for each cell
+- Compute the number of identifications (non NA values) in each cell
+- Compute the median CV per cell (see `medianCVperCell()`)
+
+We then visualise each of these to identify low quality cells that
+could be removed.
+
+```{r cellqc}
+  acms$MedianIntensity <- colMedians(
+      assay(acms[["precursors"]]), na.rm = TRUE
+  )
+
+  acms$TotalIds <- colSums(!is.na(assay(acms[["precursors"]])))
+
+  acms <- medianCVperCell(
+    acms,
+    i = "precursors",
+    groupBy = "Protein.Names",
+    nobs = 3,
+    na.rm = TRUE,
+    colDataName = "MedianCV"
+  )
+```
+
+```{r cellqc1}
+  colData(acms) |>
+    data.frame() |>
+    ggplot(aes(x = log10(MedianIntensity),
+               y = TotalIds,
+               colour = MedianCV)) +
+    geom_point(size = 4)
+```
+
+```{r cellqc2}
+colData(acms) |>
+    data.frame() |>
+    ggplot(aes(x = log10(MedianIntensity),
+               y = TotalIds,
+               colour = Subject)) +
+    geom_point(size = 4) +
+    colData(acms) |>
+    data.frame() |>
+    ggplot(aes(x = log10(MedianIntensity),
+               y = TotalIds,
+               colour = HeartLocation)) +
+    geom_point(size = 4)
+```
+
+```{r cellqc3}
+  colData(acms) |>
+    data.frame() |>
+    ggplot(aes(x = log10(MedianIntensity),
+               y = TotalIds,
+               colour = factor(Date))) +
+    geom_point(size = 4)
+```
+
+```{r cellqc4}
+colData(acms) |>
+    data.frame() |>
+    mutate(PlateNumber = as.numeric(substr(PlateWell, 2, 3))) |>
+    ggplot(aes(x = PlateNumber,
+               y = PlateLetter,
+               fill = HeartLocation)) +
+    geom_tile()
+```
 
 # Data processing
 
@@ -264,6 +336,141 @@ acms[["peptides"]]
 
 We will model the data following the *scplainer* pipeline
 [@Vanderaa2023-scplainer].
+
+## Modelling
+
+We extract the log-transformed precursor assez and remove sytox cells
+(all from subject 5):
+
+```{r sce}
+sce <- getWithColData(acms, "precursors_log")
+sce <- sce[, sce$HeartLocation != "sytox"]
+```
+
+We can now model the precursor quantities considering median intensity
+in each cell, plate position (column), subject and heart location as
+factors that influence the measure abundances.
+
+```{r scpmodelling, cache = TRUE}
+sce <- scpModelWorkflow(
+    sce,
+    formula = ~ 1 + ## intercept
+        ## normalisation
+        MedianIntensity +
+        ## batch effects
+        PlateLetter +
+        Subject +
+        ## biological variability
+        HeartLocation
+)
+```
+
+Here, we define the missing data filtering threshold: we want at least
+3 measurement for each coefficient estimation.
+
+```{r filterthreshold}
+scpModelFilterThreshold(sce) <- 3
+scpModelFilterPlot(sce)
+scpModelFilterPlot(sce)
+```
+
+## Analysis of variance
+
+```{r vaRes, cache = TRUE}
+(vaRes <- scpVarianceAnalysis(sce))
+```
+
+```{r vaPlot, cache = TRUE}
+## Add annotations from the rowData()
+vaRes <- scpAnnotateResults(
+    vaRes, rowData(sce), by = "feature", by2 = "Precursor.Id"
+)
+
+scpVariancePlot(vaRes)
+
+## Two figures on one plot
+scpVariancePlot(
+    vaRes, top = 20, by = "percentExplainedVar", effect = "Subject",
+    decreasing = TRUE, combined = FALSE, fcol = "Protein.Names"
+) + scpVariancePlot(
+        vaRes, top = 10, by = "percentExplainedVar", effect = "HeartLocation",
+        decreasing = TRUE, combined = FALSE, fcol = "Protein.Names"
+    ) + plot_layout(ncol = 1, guides = "collect")
+```
+
+
+## Differential abundance analysis
+
+```{r daRes, cache = TRUE}
+locations <- unique(sce$HeartLocation)
+combinations <- combn(locations, 2)
+contrasts <- lapply(1:ncol(combinations),
+                    function(i) c("HeartLocation",
+                                  combinations[, i]))
+
+(daRes <- scpDifferentialAnalysis(
+     sce, contrast = contrasts
+ ))
+```
+
+```{r daplots}
+daRes[[1]]
+
+daRes <-
+    scpAnnotateResults(
+        daRes, rowData(sce),
+        by = "feature", by2 = "Precursor.Id")
+
+scpVolcanoPlot(daRes,
+               textBy = "Protein.Names",
+               pointParams = list(aes(colour = Lib.Q.Value)))[[1]]
+```
+
+## Component analysis
+
+```{r caRes, cache = TRUE}
+(caRes <- scpComponentAnalysis(
+     sce, ncomp = 15, method = "APCA"))
+```
+
+```{r caPlot}
+caResCells <- caRes$bySample
+sce$cell <- colnames(sce)
+caResCells <- scpAnnotateResults(caResCells,
+                                 colData(sce), by = "cell")
+
+
+scpComponentPlot(
+    caResCells,
+    pointParams = list(aes(colour = HeartLocation,
+                           shape = Subject),
+                       size = 3)) |>
+    wrap_plots() +
+    plot_layout(guides = "collect")
+```
+
+```{r tsne}
+library(scater)
+
+sce <-addReducedDims(sce, caRes$bySample)
+sce <- runTSNE(sce, dimred = "APCA_HeartLocation")
+
+plotTSNE(sce, colour_by = "HeartLocation") +
+    plotTSNE(sce, colour_by = "Subject") +
+    plotTSNE(sce, colour_by = "PlateLetter") +
+    plotTSNE(sce, colour_by = "MedianIntensity")
+```
+
+We can not extract the hear location effect matrix, removing the
+subject, plate position and median intensity effects for downstream
+analysis.
+
+```{r scebr}
+scebr <- scpRemoveBatchEffect(
+  sce, effects = c("Subject", "PlateLetter", "MedianIntensity"),
+  intercept = TRUE)
+```
+
 
 # Downstream analyses
 
