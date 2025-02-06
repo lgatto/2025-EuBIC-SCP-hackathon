@@ -6,65 +6,6 @@ library(dplyr)
 ```
 
 ```{r}
-longFormSE <- function(object, colvars = NULL, rowvars = NULL,
-                       index = seq_along(assays(object)),
-                       na.rm = FALSE) {
-    ## Check that indices are within bounds
-    if (max(index) > length(assays(object)) | min(index) < 1)
-        stop("Index out of (assay) bounds.")
-    ## Check that all colvars exist
-    if (!is.null(colvars)) {
-        if (!all(colvars %in% names(colData(object))))
-            stop("Some 'colvars' not found in colData(.).")
-    }
-    ## Check that all rowvars exist
-    if (!is.null(rowvars)) {
-        if (!all(rowvars %in% names(rowData(object))))
-            stop("Some 'rowvars' not found in rowData(.).")
-    }
-    ## Need names for the assayNames columns. If the object's assays don't have
-    ## any names, use the index set above.
-    if (is.null(nms <- assayNames(object)))
-        nms <- index
-    res <- lapply(seq_along(index),
-                  function(i) {
-                      ans <- reshape2::melt(assay(object, index[i]),
-                                            varnames = c("rowname", "colname"),
-                                            value.name = "value",
-                                            as.is = TRUE,
-                                            na.rm = na.rm)
-                      ans$assayName <- nms[i]
-                      rownames(ans) <- NULL
-                      ans
-                  })
-    res <- do.call(rbind, res)
-    if (!is.null(colvars)) { ## Add colData variables.
-        ## Need object to have colnames
-        if (is.null(colnames(object)))
-            colnames(object) <- seq_len(ncol(object))
-        cd <- colData(object)[as.character(res$colname),
-                              colvars,
-                              drop = FALSE]
-        rownames(cd) <- NULL
-        res <- cbind(res, cd)
-    }
-    if (!is.null(rowvars)) { ## Add rowData variables
-        ## Need object to have rownames
-        if (is.null(rownames(object)))
-            rownames(object) <- seq_len(nrow(object))
-        rd <- rowData(object)[as.character(res$rowname),
-                              rowvars,
-                              drop = FALSE]
-        rownames(rd) <- NULL
-        res <- cbind(res, rd)
-    }
-    ## as(res, "DataFrame")
-    res
-}
-```
-
-```{r}
-
 library(scp)
 library(data.table)
 library(ggplot2)
@@ -91,200 +32,280 @@ annot$runCol <- annot$File.Name
 ## Format to QFeatures
 acms <- readSCPfromDIANN(report, colData = annot)
 acms <- zeroIsNA(acms, names(acms))
+
+
+acms <- readRDS("data/acms.rds")
+acms <- acms[, , 1:299]
+acms$FileIndex <- as.numeric(sub(".*_(\\d*).d", "\\1", acms$File.Name))
+acms$PlateColumn <- as.numeric(sub("[A-Z]", "", acms$PlateWell))
 ```
+
 
 # Quality control 
 
+The objective of quality control is to remove low-quality data. These
+data can be filtered based on PSM-level annotations and on cell-level
+annotations.
+
 ## PSM filtering
 
-Possible QC information 
+We first explore the features annotation. We can retrieve all the data
+annotations along the quantified values in a single long table using
+`longFormat()`
 
 ```{r}
-"Proteotypic"
-"Q.Value"
-"PEP"
-"Protein.Q.Value"
-
-
-"RT"
-"Predicted.RT"             
-"Predicted.iRT"             "First.Protein.Description" "Lib.Q.Value"              
-"Lib.PG.Q.Value"            "Ms1.Profile.Corr"          "Ms1.Normalised"           
-"Normalisation.Factor"      "Evidence"                  "Spectrum.Similarity"      
- "Averagine"                 "Mass.Evidence"             "CScore"                   
- "Decoy.Evidence"            "Decoy.CScore"              "Fragment.Quant.Raw"       
-"Fragment.Correlations"     "MS2.Scan"                  "IM"                       
-"iIM"                       "Predicted.IM"              "Predicted.iIM"   
+lf <- longFormat(
+    acms, colvars = c("HeartLocation", "Subject", "FileIndex"),
+    rowvars = c("PEP", "RT", "Predicted.RT", "IM", "Predicted.IM")
+)
 ```
 
+We first explore the distributions of the posterior error
+probabilities (PEP) for precursor identification for each cell
+separately, stratified by subject, a potential variable for batch
+effects. We sort the cells according to the sequence of MS acquisition
+(available in the `FileIndex` column).
 
-
-```{r}
-rd <- rbindRowData(acms, names(acms))
-rd <- cbind(rd, colData(acms)[rd$assay, ])
-```
-
-```{r, fig.width=10, fig.height=10}
-rd <- rbindRowData(acms, names(acms))
-ggplot(data.frame(rd)) +
-    aes(y = -log10(Q.Value), 
-        x = assay) +
-    facet_wrap(Subject ~ Location, scales = "free_x") +
+```{r, fig.width=10, fig.height=4}
+lf <- data.frame(lf) |> 
+    mutate(FileIndex = factor(FileIndex, levels = sort(unique(FileIndex))))
+ggplot(lf) +
+    aes(y = log10(PEP), 
+        x = FileIndex,
+        colour = Subject) +
     geom_boxplot()
 ```
 
+The plot indicates that the identification errors of every precursor
+are stable across the experiment. We will therefore not use PEP for
+PSM filtering.
+
+We now generate a similar plot, but focusing on the difference between
+the observed retention time (RT) and the predicted RT, where large
+differences may indicate wrong identification or issues during liquid
+chromatography. We hence plot the absolute difference between observed
+RT.
+
+```{r, fig.width=8, fig.height=3}
+ggplot(lf) +
+    aes(y = abs(RT - Predicted.RT), 
+        x = FileIndex,
+        colour = Subject) +
+    geom_boxplot() +
+    geom_hline(yintercept = 0.18, linetype = "dashed") +
+    scale_y_log10()
+```
+
+Again, the plot shows stable metrics across cells, with a few outliers
+above 0.18 spread across the experiment. We will remove those outliers
+using `filterFeatures()` that takes the `QFeatures` object and an
+arbitrary formula to filter the PSM. Note that you can directly filter
+on variables from the rowData by including them in the formula.
+
+```{r}
+acms <- filterFeatures(acms, ~ abs(RT - Predicted.RT) < 0.18)
+```
+
+Next, we remove precursors that map on multiple proteins, as these are
+of limited use when interpreting downstream, we will remove them.
+DIA-NN generated the `isProteotypic`, however the table below shows
+that some precursors considered as proteotypic may still be part of a
+protein group where the `Protein.Ids` contain multiple proteins
+separated by a `;`.
 
 ```{r}
 table(isProteotypic = rd$Proteotypic, 
-      isProteinGroup = )
+      isProteinGroup = grepl(";", rd$Protein.Ids))
 ```
 
+We here keep all precursor that are both proteotypic and not part of a
+protein group.
 
 ```{r}
-ggplot(data.frame(rd)) +
-    aes(rd$Q.Value)
+acms <- filterFeatures(acms, ~ !grepl(";", Protein.Names) &
+                           Proteotypic == 1)
 ```
 
+Finally, we add the information whether a precursor belongs to a
+contaminant protein or not. We retrieve this information using the
+cRAP database, through the `camprotR` package.
+
 ```{r}
-tmp <- aggregateFeatures(acms, names(acms), fcol = "")
-library("camprotR")
+library("camprotR") ## "CambridgeCentreForProteomics/camprotR"
 contaminants <- get_ccp_crap()
-data.frame(rd) |> 
-    filter(Protein.Ids %in% contaminants, 
-           Subject != "Subject5") |> 
-    ggplot() +
-    aes(y = log2(Precursor.Quantity), 
-        x = assay, 
-        fill = Location) +
-    geom_violin() +
-    geom_point() +
-    facet_wrap(~ Subject, scales = "free_x")
+head(contaminants)
 ```
 
-
+We next retrieve all the rowData table in a single table using
+`rbindRowData()`, we add a new column `isContaminant` and inject it 
+back into the `QFeatures` object after splitting it by assay.
 
 ```{r}
-## PSM filtering
-## Remove protein groups
-acms <- filterFeatures(acms, ~ !grepl(";", Protein.Names))
+rd <- rbindRowData(acms, names(acms))
+rd$isContaminant <- rd$Protein.Ids %in% contaminants
+rowData(acms) <- split(rd, rd$assay)
 ```
+
+We decide not to remove contaminants as they may be used later for
+model exploration and diagnostics.
 
 ## Sample filtering
 
+We now remove low-quality cells. We will compute a few metrics,
+explore the experimental design and assess how it impacts the computed
+metrics and we will conclude with removing cells identified as
+low-quality, if any.
+
+### Compute QC metrics
+
+First, we compute the median intensity within each cell. This is meant
+as a proxy for the amount of material that has been injected in the
+MS. Note that in single-cell experiments, difference in the amount of 
+material injected are subject to technical variability, but also to
+biological variability (cell size, proteome complexity, cell
+density, ...). Hence, different median intensities may not be a
+problematic artifact if different across heart location.
+
 ```{r}
-for (i in names(acms)) {
-    colData(acms)[colnames(acms)[[i]], "MedianIntensity"] <- median(
-        log2(assay(acms[[i]])), na.rm = TRUE
-    )   
-}
+acms$MedianIntensity <- sapply(names(acms), function(i) {
+    median(log2(assay(acms[[i]])), na.rm = TRUE)
+})
 ```
 
+We also compute the number of identified precursors within each cell.
+This relates to the number of rows in each set of the `QFeatures`
+object.
 
 ```{r}
 acms$TotalIds <- nrows(acms)
-data.frame(colData(acms)) |> 
-    filter(Subject != "Subject5") |> 
-    ggplot() +
-    aes(y = TotalIds, 
-        x = Location, 
+```
+
+### Explore the experimental design
+
+We now explore the experimental design. First, the sample annotation 
+contain subjects and different dates. The table below shows that each
+subject has been processed in a different day. 
+
+```{r}
+table(acms$Date, acms$Subject)
+```
+
+This is not a problematic design as soon we are not interested in
+distinguishing between subject effects and date effects, which is the
+case for this experiment.
+
+Next we will explore the plate design. We first retrieve all the
+available sample annotations from the `colData` and perform a little
+data cleaning for improved visualisation. 
+
+```{r}
+plateData <- data.frame(colData(acms)) |> 
+    mutate(PlateCol = factor(acms$PlateWell, levels = 1:24))
+```
+
+We will first explore how the data acquisition strategy, by plotting 
+the order of the the MS runs on the plate layout.
+
+```{r, fig.width=9, fig.height=3}
+ggplot(plateData) +
+    aes(y = PlateLetter, 
+        x = PlateColumn, 
+        fill = FileIndex) +
+    geom_tile() +
+    facet_grid(~ Date) +
+    scale_fill_continuous(type = "viridis") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          legend.position = "bottom")
+```
+
+We can see that each plate as been acquired sequentially (as already
+suggested by the date annotation), in order of the rows. Next, we now
+plot the plate layout with respect to the heart location of the cells,
+for each data/subject separately.
+
+```{r, fig.width=9, fig.height=3}
+ggplot(plateData) +
+    aes(y = PlateRow, 
+        x = PlateCol, 
         fill = Location) +
-    geom_violin() +
-    geom_point() +
-    facet_wrap(~Subject, scales = "free_x")
+    geom_tile() +
+    facet_grid(~ Date) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          legend.position = "bottom")
 ```
 
-```{r}
-acms <- medianCVperCell(
-    acms,
-    i = 1:299,
-    groupBy = "Protein.Names",
-    nobs = 3,
-    na.rm = TRUE,
-    colDataName = "MedianCV",
-    norm = "none"
-)
+Two observations can be drawn from the plot. First, all `sytox` cells
+are from one date and hence their effect cannot be estimated.
+According to the original study, this sample preparation for this
+subject failed. Hence we will remove the corresponding data later.
+Also cells have been assigned in block on the plate, one block for
+each heart location. While this is probably the consequence of
+practical constraints, this means we can no longer distinguish between
+well column effect (if any) and heart location effects. Hence, we will
+ignore cell column effects. 
+
+We plot the same layout, this time colouring by the number of
+precursors identified.
+
+```{r, fig.width=9, fig.height=3}
+ggplot(plateData) +
+    aes(y = PlateRow, 
+        x = PlateCol, 
+        fill = TotalIds) +
+    geom_tile() +
+    facet_grid(~ Date) +
+    scale_fill_continuous(type = "viridis") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          legend.position = "bottom")
 ```
 
+Columns 10-24 in the first plate seem to have more identified 
+precursors than the other columns, potentially indicating some batch
+effect during cell sorting. A cell type effect may also be an
+explanation, but we do not see the effect in the last plate.
+
+```{r, fig.width=9, fig.height=3}
+ggplot(plateData) +
+    aes(y = PlateLetter, 
+        x = PlateColumn, 
+        fill = MedianIntensity) +
+    geom_tile() +
+    facet_grid(~ Date) +
+    scale_fill_continuous(type = "viridis") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          legend.position = "bottom")
+```
+
+Interestingly, this plot shows that columns 1-9 in the first plate
+have lower median intensity. We now combine the information 
 
 ```{r}
-colData(acms) |>
-    data.frame() |>
-    ggplot() +
+ggplot(plateData) +
     aes(y = MedianIntensity,
         x = TotalIds,
-        colour = MedianCV) +
-    geom_point() +
+        colour = FileIndex,
+        shape = Subject) +
+    geom_point(size = 2) +
     scale_colour_continuous(type = "viridis")
-colData(acms) |>
-    data.frame() |>
-    ggplot() +
-    aes(x = MedianIntensity,
-        y = TotalIds,
-        colour = Subject) +
-    geom_point()
-colData(acms) |>
-    data.frame() |>
-    ggplot() +
-    aes(x = MedianIntensity,
-        y = TotalIds,
-        colour = Date) +
-    geom_point()
-colData(acms) |>
-    data.frame() |>
-    ggplot() +
-    aes(x = MedianIntensity,
-        y = TotalIds,
-        colour = Location) +
-    geom_point()
 ```
 
-## Data processing
+### Filter samples
 
+Upon data exploration, we identified that one of the subjects should
+be removed.
 
 ```{r}
-## Join assays
-expl <- lapply(experiments(acms), function(x) {
-    rownames(x) <- rowData(x)$Precursor.Id
-    x
-})
-experiments(acms) <- List(expl)
-acms <- joinAssays(acms, names(acms), "precursors")
-## log-transform
+acms <- subsetByColData(acms, acms$Subject != "Subject5")
+```
+
+## Log-transformation
+
+A last step before modelling is to log-transform the data.    
+
+```{r}
 acms <- logTransform(acms, "precursors", "precursors_log")
-
-acms <- aggregateFeatures(
-    acms, "precursors_log", "peptides",
-    fcol = "Modified.Sequence", fun = colMedians,
-    na.rm = TRUE
-)
-acms <- aggregateFeatures(
-    acms, "peptides", "proteins",
-    fcol = "Protein.Names", fun = colMedians,
-    na.rm = TRUE
-)
 ```
-
-
-
-
-
-
-```{r}
-sce <- readRDS("data/sce.rds")
-
-lf <- longFormSE(sce, colvars = c("Subject", "PlateRow", "Location")) |> 
-    filter(!is.na(value))
-
-
-df <- group_by(lf, rowname) |> 
-    summarise(nSubject = length(unique(Subject)),
-              nLocation = length(unique(Location)),
-              nPlateRow = length(unique(PlateRow)))
-              
-
-              ggplot(df) +
-    aes(x = ngroups) +
-    geom_histogram()
-
-```
-

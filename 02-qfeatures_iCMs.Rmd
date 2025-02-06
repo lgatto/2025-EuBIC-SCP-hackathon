@@ -123,3 +123,38 @@ Creating the `QFeatures` object with the extracted metadata.
 icms <- readSCPfromDIANN(icmsTab,
                          colData = DataFrame(tab_icms))
 ```
+
+Setting the sample names of the `QFeatures` object.
+
+```{r,eval=FALSE}
+names(icms) <- icms$Sample
+```
+
+Replace 0 by NA for downstream analysis.
+
+```{r,eval=FALSE}
+icms <- zeroIsNA(icms, names(icms))
+```
+
+Removing all precursors that have been mapped to protein groups.
+
+```{r,eval=FALSE}
+icms <- filterFeatures(icms, ~ !grepl(";", Protein.Names))
+```
+
+Replacing row names with the precursor identifications.
+
+```{r,eval=FALSE}
+expl <- lapply(experiments(icms),
+               function(x) {
+                 rownames(x) <- rowData(x)$Precursor.Id
+                 return(x)
+               })
+experiments(icms) <- List(expl)
+```
+
+Joining all the assays based on the precursors
+
+```{r,eval=FALSE}
+icms <- joinAssays(icms, i = names(icms), name = "precursors")
+```
