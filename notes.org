@@ -18,7 +18,7 @@ Enrico.
 - New visualisations
 - Write paper! Or vignette.
 
-** Hackathon plan  [6/9]
+** Hackathon plan  [7/9]
 
 1. [X] Find a paper/dataset.
 2. [X] Get the data.
@@ -27,7 +27,7 @@ Enrico.
 5. [X] Process data.
 6. [X] Model SCP data with scplainer.
 7. [ ] /In progress/ Apply downstream analyses (trajectory analysis).
-8. [ ] /In progress/ Write a vignette.
+8. [X] /In progress/ Write a vignette.
 9. [ ] Add two new data to =scpdata= and =MsDataHub= (adult and
    induced cariomtocytes)
 

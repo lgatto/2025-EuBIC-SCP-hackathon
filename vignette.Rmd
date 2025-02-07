@@ -18,7 +18,7 @@ author:
 package: scp
 abstract: >
  Application of the `scp` pipeline to the adult cardiomyocytes data
- from Ai /et al./ (2025). This vignette is distributed under a CC BY-SA license.
+ from Ai *et al.* (2025). This vignette is distributed under a CC BY-SA license.
 output:
   BiocStyle::html_document:
     toc: true
@@ -638,7 +638,7 @@ Coming soon.
 
 # Session information
 
-This vignette pas prepared as part of the [EuBIC 2025 developer
+This vignette was prepared as part of the [EuBIC 2025 developer
 hackathon](https://eubic-ms.org/events/2025-developers-meeting/).
 
 ```{r hackathon, echo = FALSE, caption = "Hackathon participants, from left to right: Sven Berres, Hannah Voß, Louise Buur, Sam van Puyenbroeck, Christophe Vanderaa, Laurent Gatto and Enrico Massignani"}
