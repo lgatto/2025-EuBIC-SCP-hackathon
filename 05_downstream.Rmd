@@ -1,0 +1,383 @@
+---
+title: "Missing data tollerant consensus clustering for single cell proteomics data"
+output: html_document
+author:
+  - "Hannah Voß"
+  - "Christophe Vanderaa"
+  - "Laurent Gatto"
+date: "2025-02-07"
+bibliography: 05_downstream.bib
+---
+
+# Consensus clustering of single cell proteomics data:
+## Consensus Clustering: 
+
+In single-cell experiments, different cell types and phenotypes are compared. The number of distinct phenotypes within a dataset cannot always be directly extracted from the given metadata. In exploratory data analysis, the identification of molecular subgroups (= clusters)- based on the molecular precursor abundance profiles of batch--corrected data enables an unbiased and data driven identification of phenotypes represented in a data set. 
+
+The identification of clusters can for example be performed trough dimensionality reduction methods, such as Principal Component Analysis (PCA), or clustering approaches, such as hierarchical clustering. However, determining a reliable and stable number of clusters within a dataset is often subjective and biased, as it frequently relies on the visual interpretation of results.
+
+
+**Consensus clustering** is a technique used to enhance the robustness and reliability of clustering results by integrating multiple clustering outputs. Different methods for consensus clustering, such as Monte Carlo reference-based Consensus Clustering (M3C) @John2020-nv are available for omics data (genomics, transcriptomics) but have been originally developed for other Omics types. As a result, they frequently lack ability to deal with missing data, often present in single cell proteomics experiments.
+
+
+Overcoming this limitation, for single cell proteomics data, that often underlies technical variations (batch — effects) we highly advise against the usage of imputation technologies to artificially create complete datasets, since they are highly error-prone. At the same time, the reduction of features to complete observations across the dataset can significantly reduce the number of accessible features for subtype identification and biological information.
+
+Hence, we propose the usage of packages like **ConsensusClusterPlus** for single cell proteomics data-based consensus clustering, that can deal with missing data. @Wilkerson2010-nn
+
+
+## The ConsensusClusterPlus package
+For more information on ConsensusClusterPlus, visit the respective Vignette: 
+
+```{r,message=FALSE, warning=FALSE}
+browseVignettes("ConsensusClusterPlus")
+```
+
+
+ConsensusClusterplus can handle missing data under the following requirements:
+
+1. At least 1 feature must be complete across all samples.
+2. Only the integrated Pam and HC method can be applied for clustering (K-means clustering, integrated into the package, is not supported for data matrixes with missing values.)
+3. Partial complete observation must be applied for correlation analysis, in the corUse parameter. 
+
+## Installing ConsensusClusterPlus via Bioconductor:
+
+ConsensusClusterPlus can be installed via Bioconducter, using the following command:
+```{r,message=FALSE, warning=FALSE}
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("ConsensusClusterPlus")
+```
+## Loading necessary libraries:
+
+The following libraries are required to execute ConsensusClusterPlus for SCP data, as well as to perform suggested downstream visualizations and analysis:
+
+```{r,message=FALSE, warning=FALSE}
+library(ConsensusClusterPlus)
+library(scp)
+library(mixOmics)
+library(ggplot2)
+library(dplyr)
+library(openxlsx)
+library(readr)
+library(lubridate)
+library(gridExtra)
+```
+
+## Input data and manipulation:
+
+###The Ai2025 data set: 
+
+The dataset contains 299 single cells sorted from human hearts. Cells were sorted for three subjects. (Subject3; Subject4; Subject5). Subject5 can be disregarded in further analysis, since it only contains viability controls to test for sample stability after heart transportation and cell sorting. Across Suject3 and Subject4, 4 different cell types were analyzed: RV, LV-Endo, LV-Epi and LV-Mid. 
+
+The current vignette will focus on the batch corrected SingleCellExperiment object scebr. Scebr contains 6564 Precursors across 278 cells.  For batch correction and normalization for the Ai2025 data set, please refer to the respective vignette. 
+
+```{r,message=FALSE, warning=FALSE}
+scebr<-readRDS("sce_batch_removed.rds")
+```
+
+The SingleCellExperiment object scebr will be converted to a matrix format for further processing (ConsensusClusterPlus requires a matrix as input). 
+
+```{r,message=FALSE, warning=FALSE}
+df<-assay(scebr)
+```
+
+For more information about data preprocessing and batch effect reduction, please refer to: 
+
+```{r,message=FALSE, warning=FALSE}
+browseVignettes("scp")
+```
+
+
+
+### Data filtering for Consensus Clustering:
+
+As stated, ConsensusClusterPlus is missing data tolerant. However, partial or incomplete observations in CorUse,  can lead to biased or inaccurate correlation estimates because of missing data, that can distort the true relationship between variables. If missing values are not randomly distributed, they may introduce systematic bias,  that can distort correlation values. Due to batch-effects, missing values in single cell proteomics data are not consequently randomly distributed. Furthermore,  smaller sample sizes due to incomplete data increase the variability of the correlation coefficient, reducing its reliability. 
+
+As a result, missing data should be reduced to as few precursors with missing data as possible, while considering a reliable portion of biological features. 
+
+In this example, the Ai2025 dataset is limited to samples, containing at least 50% of values and Precursors found in at least 50% of samples. 
+
+To enable at least one complete precursor feature across all samples (requirement of ConsensusClusterPlus), sample ID:7500 was removed:
+
+```{r,message=FALSE, warning=FALSE}
+row_threshold <- 0.5 * ncol(df)  # 50% of total columns
+col_threshold <- 0.5 * nrow(df)  # 50% of total rows
+df_clean <- df[rowSums(is.na(df)) <= row_threshold, ]
+df_clean <- df_clean[, colSums(is.na(df_clean)) <= col_threshold]
+df_clean <- df_clean[, !(colnames(df_clean) == "X:\\TimsTOF-SCP\\Data\\CM_PROJECT\\221019_CM_SUBJECT-03\\CMs_Subject3_Lvendo_D13_BD14_1_7500.d")]
+
+```
+
+The resulting matrix `df_clean` contains 2000 Precursors across 278 cells.
+
+## ConsensusClusterPlus application:
+
+The ConsensusClusterPlus function was executed using the following parameters: 
+
+```{r,message=FALSE, warning=FALSE}
+consensusdata<-ConsensusClusterPlus(df_clean, maxK = 15, reps=100, pItem=0.8, pFeature=1, clusterAlg="hc",title="HC_Pearson_Correlation", innerLinkage="average", finalLinkage="average", distance="pearson", ,plot="pdf",writeTable=TRUE,corUse ="pairwise.complete.obs")
+
+```
+
+The optimal cluster number can be determined from the cumulative distribution function (CDF) plot, as well as the relative change in the area under the CDF curve plot. For further information, please refer to the ConsensusClusterPlus paper and vignette @Wilkerson2010-nn. For the Ai2025 dataset, the optimal cluster number was determined to be 3. 
+
+
+## Visualizing ConsensusClusterPlus results:
+Clusters for k=optimal can be for example visualized using a scatter plot visualization of NIPALs (missing data tolerant) PCA. 
+
+Principal components (PC) can be calculated as following, using NIPALs PCA:
+
+```{r,message=FALSE, warning=FALSE}
+pc<-pca(
+  t(df_clean),
+  ncomp = 3
+)
+
+```
+
+PCs can be extracted from the PCA object as a matrix:
+```{r,message=FALSE, warning=FALSE}
+pc_matrix<-pc$x
+```
+
+Labels for consensus clusters at k=optimal can be extracted from the ConsensusClusterPlus Consensus Class file, generated by ConsensusClusterPlus:
+
+Of Note: Column names "one" and "two" were manually integrated for k=optimal, after consensus clustering.
+
+
+
+```{r,message=FALSE, warning=FALSE}
+consensus<-read.csv("HC_Pearson_Correlation.k=3.consensusClass.csv")
+
+```
+
+
+PCs can be visualized, using ggplot2. We recommend plotting consensus clusters at k=optimal in combination with all previously considered technical and biological metadata parameters, to investigate correlations between previously considered parameters and consensus clusters.
+
+
+```{r}
+p1=ggplot(pc_matrix, aes(x = PC1, y = PC2, color = colData(scebr)[rownames(pc_matrix),"Location"]
+)) +
+  geom_point(size = 2) +
+  theme_minimal() +
+  theme(
+    legend.text = element_text(size = 10),
+    axis.text = element_text(size = 10)
+  ) +
+  labs(
+    title = "Heart Location",
+    x = "PC1",
+    y = "PC2",
+    color = "Labels"
+  )
+
+p2=ggplot(pc_matrix, aes(x = PC1, y = PC2, color = colData(scebr)[rownames(pc_matrix),"Subject"]
+)) +
+  geom_point(size = 2) +
+  theme_minimal() +
+  theme(
+    legend.text = element_text(size = 10),
+    axis.text = element_text(size = 10)
+  ) +
+  labs(
+    title = "Subject",
+    x = "PC1",
+    y = "PC2",
+    color = "Labels"
+  )
+
+p3=ggplot(pc_matrix, aes(x = PC1, y = PC2, color = colData(scebr)[rownames(pc_matrix),"MedianIntensity"]
+)) +
+  geom_point(size = 2) +
+  theme_minimal() +
+  theme(
+    legend.text = element_text(size = 10),
+    axis.text = element_text(size = 10)
+  ) +
+  labs(
+    title = "Median Intensity ",
+    x = "PC1",
+    y = "PC2",
+    color = "Labels"
+  )
+p4=ggplot(pc_matrix, aes(x = PC1, y = PC2, color = consensus$two,
+)) +
+  geom_point(size = 2) +
+  theme_minimal() +
+  theme(
+    legend.text = element_text(size = 10),
+    axis.text = element_text(size = 10)
+  ) +
+  labs(
+    title = "Consensus Cluster",
+    x = "PC1",
+    y = "PC2",
+    color = "Labels"
+  )
+grid.arrange(p1, p2, p3,p4, ncol = 2) 
+```
+For the Ai2025 dataset, while cluster one  and two are build in a mostly cell-type independent manner, for cluster three a clear correlation can be observed for cells, extracted from the right ventricle. This goes in line with biological observations, related to functional differences between the right (RV) and left ventricle (LV). The proteomic differences between the left ventricle and right ventricle are described to be significant, reflecting their distinct functional roles and responses to various physiological conditions. From bulk proteomic studies it is evident, that the LV exhibits higher concentrations of proteins related to energy metabolism, such as myofibrillar creatine kinase M-type and l-lactate dehydrogenase, particularly in the apical region, indicating a greater energetic demand. 
+In contrast, the RV shows a different protein profile, with notable differences in mitochondrial proteins, suggesting a unique metabolic adaptation @Eckhardt2018-sn.
+
+# Integrating identified clusters in single cell proteomics data modeling: 
+
+The identified clusters can be integrated in further single cell proteomics data modeling, using the linear regression model, implemented in the scp package.
+
+Load a  search engine output file (in this case DIA-NN):
+```{r,message=FALSE, warning=FALSE}
+acmsTab <- read_tsv("report.tsv")
+
+```
+
+In the next step, the original scp data must be reduced to the samples, included in consensus clustering:
+
+
+```{r,message=FALSE, warning=FALSE}
+acmsTab <- acmsTab %>% filter(!grepl("sytox", File.Name, ignore.case = TRUE))
+
+acmsTab <- acmsTab %>% filter(!grepl("X:\\\\TimsTOF-SCP\\\\Data\\\\CM_PROJECT\\\\221019_CM_SUBJECT-03\\\\CMs_Subject3_Lvendo_D13_BD14_1_7500.d", File.Name, ignore.case = TRUE))
+
+
+```
+
+Extract the metadata from file names:
+
+```{r,message=FALSE, warning=FALSE}
+#The Metadata is extracted from the sample names
+tab <- tibble(File.Name = unique(acmsTab[[1]])) |>
+  #Everything before CM_PROJECT is replaced by nothing(""). \ means something else in R. you need an extra \ to mean the actual character. 
+  mutate(Sample = sub("^.+CM_PROJECT\\\\", "", File.Name)) |>
+  #\ is replaced by _
+  mutate(Sample = sub("\\\\", "_", Sample)) |>
+  #Extracts the first 6 characters from sample
+  mutate(Date = ymd(as.integer(substring(Sample, 1, 6)))) |>
+  #Converts the "date" class "date" by a character - modeling function cannot work with date 
+  mutate(Date = format(Date, "%Y-%m-%d")) |>  
+  #Matches and returns the word Subject with any number. () is the captured group. _ after and everything else is not returned
+  mutate(Subject = sub("^.+_(Subject[0-9])_.+$", "\\1", Sample)) |>
+  #Matches and returns a letter directly followed by any number. () is the captured group. _ after and everything else is not returned
+  mutate(PlateWell = sub("^.+_([A-Z][0-9]+)_.+$", "\\1", Sample)) |>
+  #Matches and returns a letter directly followed by any number. () is the captured group. Position is indicated by _1 but nur captured
+  mutate(Position = sub("^.+_([A-Z]+[0-9]+)_1_[0-9]+\\.d$", "\\1", Sample))|>
+  #The To see if the plate inherits a Batcheffect, extract it from Plate 
+  mutate(PlateLetter = sub("([A-Z]).*", "\\1", PlateWell))|>
+  #The To see if the position inherits a Batcheffect, extract it from Position
+  mutate(PositionLetter = sub("([A-Z][A-Z]).*", "\\1", Position))
+
+#The Heartlocation is a little bit difficult, because it does have issues with the capital letters 
+tab$HeartLocation <- NA #Create a colum called HeartLocation.It is still empty now 
+ExpectedLocations <- c("Lvendo", "Lvepi", "Lvmid", "RV", "sytox") #Tell which values you do expect. 
+for (i in 1:5) {
+  loc <- ExpectedLocations[i] #Iterates trough all i in expected location
+  tab$HeartLocation[grep(loc, tab$File.Name, ignore.case = TRUE)] <- loc #Searched whem in Tabs file name and ignores if its capital letter or not 
+}
+
+```
+
+To add consensus cluster label for k=optimal to the list of applicable variables for scp data modeling, refer to the respective consensus class output file, provided by ConsensusClusterPlus:
+
+```{r,message=FALSE, warning=FALSE}
+cluster_data<-read.csv("HC_Pearson_Correlation.k=3.consensusClass.csv")
+cluster_data <- cluster_data %>% rename(consensus_cluster = two)
+tab <- tab %>%
+  left_join(cluster_data, by = c("File.Name" = "one"))  # Specify the correct column names
+tab$runCol <- tab$File.Name
+```
+
+
+Make an QFeatures object from extracted metadata and DIA-NN output:
+
+```{r,message=FALSE, warning=FALSE}
+acms <- readSCPfromDIANN(acmsTab,
+                         colData = DataFrame(tab))
+names(acms) <- acms$Sample
+```
+
+Some quantitative proteomics software packages provide an output of 0 for missing values. They can be considered missing values and should be replaced by NA, so prevent data distortion upon log2 transformation prior to data modeling:
+
+```{r,message=FALSE, warning=FALSE}
+acms <- zeroIsNA(acms, names(acms))
+
+```
+
+
+In the present example, precursors were only considered if they related to prototypic peptides:
+
+```{r,message=FALSE, warning=FALSE}
+acms <- filterFeatures(acms, ~ !grepl(";", Protein.Names))
+
+
+```
+
+For modeling, a combined, new assay will be constructed, containing precursors as rows and samples as columns:
+
+```{r,message=FALSE, warning=FALSE}
+expl <- lapply(experiments(acms),
+               function(x) {
+                 rownames(x) <- rowData(x)$Precursor.Id
+                 x
+               })
+
+experiments(acms) <- List(expl)
+acms <- joinAssays(acms, i = names(acms), name = "precursors")
+
+
+```
+
+The median precursor abundance per column is calculated, to be included in the linear model for data normalization:
+
+```{r,message=FALSE, warning=FALSE}
+acms$MedianIntensity <- colMedians(
+  assay(acms[["precursors"]]), na.rm = TRUE
+)
+
+
+```
+
+The log2 precursor intensity is calculated to approximate the Gaussian distribution for linear modeling:
+
+```{r,message=FALSE, warning=FALSE}
+acms <- logTransform(acms, "precursors", "precursors_log")
+
+```
+
+A single cell object is created from generated data:
+
+```{r,message=FALSE, warning=FALSE}
+sce <- getWithColData(acms, "precursors_log")
+```
+
+The linear model is executed, including the identified consensus clusters as an additional biologically relevant variable:
+
+```{r, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+sce <- scpModelWorkflow(
+  sce,
+  formula = ~ 1 + ## intercept
+    ## normalisation
+    MedianIntensity +
+    PlateLetter +
+    Date +
+     ## biological variability
+    consensus_cluster +
+    HeartLocation
+  
+)
+```
+
+The explained variance induced by each considered variable in the model can be visualized in a variance plot:
+
+```{r,message=FALSE, warning=FALSE}
+(vaRes <- scpVarianceAnalysis(sce))
+
+vaRes <- scpAnnotateResults(
+  vaRes, rowData(sce), by = "feature", by2 = "Precursor.Id"
+)
+
+scpVariancePlot(vaRes)
+
+```
+
+Evidently, the identified consensus clusters account for the highest proportion of the explained variance,  indicating their biological relevance for the Ai2025 data set.
+
+The identified clusters should be considered and explored in further downstream analysis pipelines.
