@@ -2,7 +2,7 @@
 title: "Application of the scp pipeline to adult cardiomyocytes data"
 author:
 - name: Sven Berres
-  affiliation: Medical Bioinfomratics, University Bochum, Germany
+  affiliation: Medical Bioinformatics, University Bochum, Germany
 - name: Louise Buur
   affiliation: Bioinformatics Research Group, University of Applied Sciences Upper Austria, Austria
 - name: Laurent Gatto
