@@ -85,10 +85,11 @@ library(patchwork)
 
 We can now read in the results file from DIA-NN. We use the file
 `report.tsv` file generate by DIA-NN, that can be downloaded via the
-`r BiocStyle::Biocpkg("MsDataHub")` package^[Version 1.7.2 or later.].
+`r BiocStyle::Biocpkg("MsDataHub")` package^[Version 1.7.1 or later.]
+and read it as a `tibble` with `read_tsv()`.
 
 ```{r readreport, eval = TRUE, cache = TRUE, message = FALSE}
-acmsTab <- MsDataHub::Ai2025_aCMs_report.tsv()
+(acmsTab <- read_tsv(MsDataHub::Ai2025_aCMs_report.tsv()))
 ```
 
 We need to extract metadata from the file names, in particular:
