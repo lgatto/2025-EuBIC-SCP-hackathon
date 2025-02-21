@@ -2,7 +2,7 @@
 title: "Application of the scp pipeline to adult cardiomyocytes data"
 author:
 - name: Sven Berres
-  affiliation: Medical Bioinfomratics, University Bochum, Germany
+  affiliation: Medical Bioinformatics, University Bochum, Germany
 - name: Louise Buur
   affiliation: Bioinformatics Research Group, University of Applied Sciences Upper Austria, Austria
 - name: Laurent Gatto
@@ -84,18 +84,12 @@ library(patchwork)
 # Data prepartion
 
 We can now read in the results file from DIA-NN. We use the file
-`report.tsv` file generate by DIA-NN (renamed `aCMs_report.zip` below).
+`report.tsv` file generate by DIA-NN, that can be downloaded via the
+`r BiocStyle::Biocpkg("MsDataHub")` package^[Version 1.7.2 or later.].
 
 ```{r readreport, eval = TRUE, cache = TRUE, message = FALSE}
-acmsTab <- read_tsv("./data/aCMs_report.zip")
+acmsTab <- MsDataHub::Ai2025_aCMs_report.tsv()
 ```
-
-<!-- We can use the `readSCPfromDIANN` to have an initial look at the data. -->
-
-<!-- ```{r readscp0, eval = FALSE} -->
-<!-- acms <- readSCPfromDIANN(acmsTab) -->
-<!-- acms -->
-<!-- ``` -->
 
 We need to extract metadata from the file names, in particular:
 - File name
@@ -250,7 +244,7 @@ using `filterFeatures()` that takes the `QFeatures` object and an
 arbitrary formula to filter the PSM. Note that you can directly filter
 on variables from the rowData by including them in the formula.
 
-```{r filterRT}
+```{r filterRT, cache = TRUE}
 acms <- filterFeatures(acms, ~ abs(RT - Predicted.RT) < 0.18)
 ```
 
@@ -270,7 +264,7 @@ table(isProteotypic = rd$Proteotypic,
 We here keep all precursor that are both proteotypic and not part of a
 protein group.
 
-```{r filterProt}
+```{r filterProt, cache = TRUE}
 acms <- filterFeatures(acms,
                        ~ !grepl(";", Protein.Names) &
                            Proteotypic == 1)
